@@ -9,6 +9,10 @@ import app.models as models
 import app.schemas as schemas
 import app.auth as auth
 import app.ai_engine as ai_engine # Yapay Zeka motorumuzu dahil ettik
+from fastapi.middleware.cors import CORSMiddleware
+import json
+from datetime import date
+
 
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
@@ -19,22 +23,29 @@ app = FastAPI(
     version="2.0.0"
 )
 
+
+# app = FastAPI(...) satırının hemen altına ekle:
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"], # Sadece bizim Next.js frontend'imize izin ver
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
 def root():
-    return {"message": "Sistem aktif. Lütfen /docs adresine giderek Swagger UI üzerinden test edin."}
+    return {"message": "Sistem aktif.  Swagger UI üzerinden test edin."}
 
 # ==========================================
 # 1. KİMLİK DOĞRULAMA (AUTH) & KAYIT
 # ==========================================
 @app.post("/register/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """Sisteme yeni bir Doktor veya Hasta kaydeder."""
-    # Email daha önce alınmış mı kontrolü
     existing_user = db.query(models.User).filter(models.User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Bu email adresi zaten kayitli.")
     
-    # Şifreyi bcrypt ile çırpıp (hash) veritabanına öyle kaydediyoruz!
     hashed_pw = auth.get_password_hash(user.password)
     
     db_user = models.User(
@@ -44,7 +55,12 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         tc_kimlik=user.tc_kimlik,
         role=user.role,
         title=user.title,
-        specialty=user.specialty
+        specialty=user.specialty,
+        date_of_birth=user.date_of_birth,
+        gender=user.gender,
+        height=user.height,
+        weight=user.weight,
+        blood_type=user.blood_type
     )
     db.add(db_user)
     db.commit()
@@ -74,6 +90,14 @@ def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
     """Giriş yapmış kullanıcının kendi profil bilgilerini getirir."""
     return current_user
 
+@app.get("/users/{user_id}", response_model=schemas.UserResponse)
+def get_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """ID'ye göre kullanıcı bilgilerini getirir."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    return user
+
 # ==========================================
 # 2. KLİNİK VAKA & AI ENDPOINT'LERİ (KORUMALI)
 # ==========================================
@@ -97,13 +121,22 @@ def create_case(
     # 3. YAPAY ZEKA (AI) ANALİZİNİ ÇALIŞTIR
     wbc_value = case.blood_test.wbc if case.blood_test else None
     
+    patient_age = 30
+    if patient.date_of_birth:
+        today = date.today()
+        patient_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
+
     # AI motoruna verileri gönderip analiz sonucunu alıyoruz
-    ai_result = ai_engine.analyze_clinical_case(
-        patient_age=30, # (Not: Yaş sistemini User modeline sonradan ekleyebiliriz, şimdilik varsayılan 30 gidiyor)
+    ai_result_dict = ai_engine.generate_structured_ai_analysis(
+        patient_age=patient_age,
         symptoms=case.symptoms,
-        wbc=wbc_value,
-        heart_rate=case.heart_rate
+        heart_rate=case.heart_rate,
+        oxygen_saturation=case.oxygen_saturation,
+        blood_pressure=case.blood_pressure,
+        glucose_level=case.blood_test.glucose_level if case.blood_test else None,
+        wbc=wbc_value
     )
+    ai_result = json.dumps(ai_result_dict, ensure_ascii=False)
 
     # 4. Vakayı Oluştur
     db_case = models.CasePost(
@@ -145,5 +178,35 @@ def get_cases(db: Session = Depends(get_db), current_user: models.User = Depends
     if current_user.role == models.UserRole.DOCTOR:
         return db.query(models.CasePost).all()
     else:
-        # Hasta için filtreleme
         return db.query(models.CasePost).filter(models.CasePost.patient_id == current_user.id).all()
+
+@app.get("/cases/{case_id}/ai-analysis", response_model=schemas.AIAnalysisResponse)
+def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Seçilen vakanın detaylı AI analizini JSON yapısında döndürür."""
+    case = db.query(models.CasePost).filter(models.CasePost.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Vaka bulunamadı")
+    
+    # Hasta veya doktor erişim kontrolü (Basit RBAC kontrolü, istersek ekleyebiliriz)
+    if current_user.role == models.UserRole.PATIENT and case.patient_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bu vakayı görüntüleme yetkiniz yok.")
+
+    patient = db.query(models.User).filter(models.User.id == case.patient_id).first()
+    patient_age = 30
+    if patient and patient.date_of_birth:
+        today = date.today()
+        patient_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
+
+    glucose = case.blood_test.glucose_level if case.blood_test else None
+    wbc = case.blood_test.wbc if case.blood_test else None
+
+    result = ai_engine.generate_structured_ai_analysis(
+        patient_age=patient_age,
+        symptoms=case.symptoms,
+        heart_rate=case.heart_rate,
+        oxygen_saturation=case.oxygen_saturation,
+        blood_pressure=case.blood_pressure,
+        glucose_level=glucose,
+        wbc=wbc
+    )
+    return result

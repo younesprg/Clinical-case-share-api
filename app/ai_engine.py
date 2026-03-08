@@ -1,41 +1,130 @@
 # app/ai_engine.py
+from typing import Optional
 
-def analyze_clinical_case(patient_age: int, symptoms: str, wbc: float = None, heart_rate: int = None) -> str:
+def generate_structured_ai_analysis(
+    patient_age: int,
+    symptoms: str, 
+    heart_rate: Optional[int] = None, 
+    oxygen_saturation: Optional[int] = None, 
+    blood_pressure: Optional[str] = None,
+    glucose_level: Optional[float] = None,
+    wbc: Optional[float] = None
+) -> dict:
     """
-    Hastanın verilerini alarak yapay zeka simülasyonu (kural tabanlı analiz) yapar.
-    Gerçek bir projede burası harici bir AI modeline (Örn: ChatGPT API) istek atacak şekilde güncellenebilir.
+    Simulated algorithmic evaluation of patient metrics that returns a structured
+    JSON response suitable for the frontend AI Diagnostic Engine.
     """
-    symptoms_lower = symptoms.lower()
-    analysis_result = "### 🧠 AI Karar Destek Sistemi Analizi\n\n"
+    risk_level = "Normal"
+    confidence_score = 85
+    diagnoses = []
+    recommendations = []
 
-    # 1. Kan Değeri Analizi (WBC - Beyaz Kan Hücresi)
-    if wbc:
-        if wbc > 10000:
-            analysis_result += "⚠️ **Kritik Uyarı:** Lökositoz (WBC yüksekliği) tespit edildi. Bakteriyel enfeksiyon riski yüksek.\n"
-        elif wbc < 4000:
-            analysis_result += "⚠️ **Kritik Uyarı:** Lökopeni (WBC düşüklüğü) tespit edildi. Viral enfeksiyon veya bağışıklık sistemi baskılanması araştırılmalı.\n"
-        else:
-            analysis_result += "✅ Kan değerleri (WBC) normal referans aralığında.\n"
+    critical_flags = 0
+    elevated_flags = 0
 
-    # 2. Semptom Analizi ve Olası Tanılar
-    analysis_result += "\n**🔍 Olası Tanılar (Differential Diagnosis):**\n"
-    if "baş ağrısı" in symptoms_lower:
-        analysis_result += "- Primer baş ağrısı sendromları (Migren, Gerilim tipi baş ağrısı)\n"
-        analysis_result += "- Sekonder nedenlerin dışlanması önerilir (Hipertansiyon vb.)\n"
-    elif "ateş" in symptoms_lower or "öksürük" in symptoms_lower:
-        analysis_result += "- Üst/Alt Solunum Yolu Enfeksiyonu (Viral/Bakteriyel)\n"
-        analysis_result += "- Pnömoni (Eğer solunum sıkıntısı da tabloya eşlik ediyorsa)\n"
-    elif "göğüs ağrısı" in symptoms_lower:
-        analysis_result += "- Akut Koroner Sendrom (Acil EKG ve Troponin takibi önerilir!)\n"
-        analysis_result += "- Pulmoner Emboli\n"
-    else:
-        analysis_result += "- Belirtilen semptomlar spesifik bir patern oluşturmadı. Daha detaylı klinik muayeneye ihtiyaç var.\n"
+    if oxygen_saturation is not None:
+        if oxygen_saturation < 90:
+            critical_flags += 1
+            diagnoses.append("Şiddetli Hipoksi")
+            recommendations.append("Acil oksijen desteği gerekli")
+        elif oxygen_saturation < 95:
+            elevated_flags += 1
+            diagnoses.append("Hafif Hipoksi")
+            recommendations.append("Oksijen seviyelerini yakından izleyin")
 
-    # 3. Genel Tedavi ve Yaklaşım Tavsiyesi
-    analysis_result += "\n**💊 Yaklaşım Tavsiyesi:**\n"
-    if patient_age > 65:
-        analysis_result += "- Dikkat: Hasta geriatrik grupta (65+ yaş) olduğu için ilaç dozajları böbrek/karaciğer fonksiyonlarına göre dikkatle ayarlanmalıdır.\n"
+    if heart_rate is not None:
+        if heart_rate > 120 or heart_rate < 40:
+            critical_flags += 1
+            diagnoses.append("Aritmi / Ciddi Anormal Kalp Atış Hızı")
+            recommendations.append("Acil EKG ve kardiyoloji konsültasyon")
+        elif heart_rate > 100:
+            elevated_flags += 1
+            diagnoses.append("Taşikardi")
+            recommendations.append("Ağrı, ateş veya dehidrasyon açısından değerlendirin")
+
+    if blood_pressure:
+        try:
+            bps = blood_pressure.split('/')
+            if len(bps) == 2:
+                sys = int(bps[0])
+                dia = int(bps[1])
+                if sys > 140 or dia > 90:
+                    elevated_flags += 1
+                    diagnoses.append("Hipertansiyon")
+                    recommendations.append("Tansiyon takibi ve gerekirse antihipertansif tedavi düşünülmeli")
+                elif sys < 90 or dia < 60:
+                    elevated_flags += 1
+                    diagnoses.append("Hipotansiyon")
+                    recommendations.append("Sıvı resüsitasyonu ve altta yatan nedenin araştırılması")
+        except ValueError:
+            pass # Ignore invalid format
+
+    symptoms_low = symptoms.lower() if symptoms else ""
+    if "göğüs" in symptoms_low or "chest pain" in symptoms_low or "kalp" in symptoms_low:
+        critical_flags += 1
+        diagnoses.append("Akut Koroner Sendrom Şüphesi")
+        recommendations.append("Acil EKG, Troponin takibi ve sürekli telemetri izlemi")
     
-    analysis_result += "- Kesin tanı için semptomlara yönelik görüntüleme ve ek laboratuvar sonuçları beklenmelidir.\n"
+    if "nefes" in symptoms_low or "öksürük" in symptoms_low or "shortness of breath" in symptoms_low:
+        elevated_flags += 1
+        diagnoses.append("Solunum Sıkıntısı")
+        recommendations.append("Akciğer seslerini dinleyin, Akciğer Grafisi düşünün")
 
-    return analysis_result
+    if "bulantı" in symptoms_low or "kusma" in symptoms_low or "nausea" in symptoms_low or "vomiting" in symptoms_low:
+        elevated_flags += 1
+        diagnoses.append("Gastrointestinal Rahatsızlık / Gastroenterit Şüphesi")
+        recommendations.append("Sıvı replasmanı sağlayın, antiemetik tedaviyi değerlendirin")
+
+    if "zehir" in symptoms_low or "zehirlenme" in symptoms_low or "doz aşımı" in symptoms_low or "intoxication" in symptoms_low or "poison" in symptoms_low:
+        critical_flags += 1
+        diagnoses.append("Zehirlenme / Toksikolojik Acil Durum")
+        recommendations.append("Ulusal Zehir Danışma Merkezi (UZEM - 114) ile iletişime geçin, vital bulguları yakından izleyin")
+
+    if patient_age > 65:
+        elevated_flags += 1
+        recommendations.append("Geriatrik hasta: İlaç dozajlarına dikkat edilmeli")
+
+    # Assuming WBC is in 10^9/L format for this UI (e.g. 6.8) or raw count (6800)
+    if wbc is not None:
+        if wbc > 11.0 and wbc < 100: # 10^9/L format
+            elevated_flags += 1
+            diagnoses.append("Lökositoz")
+            recommendations.append("Kan kültürleri alınmalı ve ampirik antibiyotik başlanması düşünülmeli")
+        elif wbc > 11000: # raw count format
+            elevated_flags += 1
+            diagnoses.append("Lökositoz")
+            recommendations.append("Kan kültürleri alınmalı ve ampirik antibiyotik başlanması düşünülmeli")
+
+    if glucose_level is not None:
+        if glucose_level > 200:
+            elevated_flags += 1
+            diagnoses.append("Hiperglisemi")
+            recommendations.append("Kan glukoz takibi, insülin tedavisi düşünülmeli")
+
+    if critical_flags > 0:
+        risk_level = "Critical"
+        confidence_score = 95
+    elif elevated_flags > 1:
+        risk_level = "High"
+        confidence_score = 88
+    elif elevated_flags == 1:
+        risk_level = "Elevated"
+        confidence_score = 80
+    else:
+        risk_level = "Normal"
+        confidence_score = 92
+        diagnoses.append("Akut fizyolojik stres saptanmadı")
+        recommendations.append("Rutin bakım ve izleme devam edin")
+
+    # Ensure we always have at least one diagnosis/recommendation
+    if not diagnoses:
+        diagnoses.append("Daha fazla klinik değerlendirme gerekli")
+    if not recommendations:
+        recommendations.append("Standart izlem protokolü")
+
+    return {
+        "risk_level": risk_level,
+        "confidence_score": confidence_score,
+        "differential_diagnoses": diagnoses,
+        "clinical_recommendations": recommendations
+    }

@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 
 # Format: postgresql://kullanici_adi:sifre@localhost/veritabani_adi
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:maxx77@localhost/caseshare_db"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:maxx77@localhost/case_share"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
