@@ -1,4 +1,9 @@
 
+fix_db.py 
+fix_postgres.py 
+full_reset_db.py 
+migrate_db.py 
+seed_users.py
 
 .env
 .env.*
