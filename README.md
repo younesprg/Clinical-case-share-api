@@ -1,34 +1,50 @@
-# 🏥 Case-Share AI API: Clinical Decision Support & Case Management
+# 🏥 Clinical Case Share & AI Diagnostic Platform
 
-Case-Share AI, sağlık profesyonellerinin (doktorlar) ve hastaların tıbbi vakaları güvenli bir şekilde yönetebildiği, yapay zeka destekli bir klinik karar destek sistemi (Clinical Decision Support System) sunan modern bir Backend API servisidir.
+Bu proje, doktorların ve sağlık profesyonellerinin klinik vakaları (Case Reports) güvenli bir şekilde paylaşabildiği, hastaların anlık vitallerini takip edebildiği ve entegre **Yapay Zeka Karar Destek Sistemi (AI Diagnostic Engine)** ile teşhis süreçlerini hızlandıran modern bir Med-Tech (Tıbbi Teknoloji) platformudur.
 
-Bu proje, ölçeklenebilir bir yazılım mimarisi, rol bazlı erişim kontrolü (RBAC) ve ilişkisel veritabanı tasarımı prensipleri kullanılarak geliştirilmiştir.
 
-## 🚀 Öne Çıkan Özellikler
+## ✨ Öne Çıkan Özellikler
 
-* **Rol Bazlı Yetkilendirme (RBAC) & JWT Security:** Sistemde `Doctor` ve `Patient` olmak üzere iki farklı rol bulunur. Endpoints erişimleri JWT (JSON Web Token) ve bcrypt şifreleme algoritmaları ile uçtan uca korunmaktadır.
-* **İlişkisel Veritabanı Mimarisi:** PostgreSQL üzerinde SQLAlchemy ORM kullanılarak tasarlanmıştır.
-    * *One-to-One:* Vaka (Case) ve Kan Testi (Blood Test) ilişkisi.
-    * *Many-to-Many:* Vaka ve Kronik Hastalıklar (Comorbidities) ilişkisi.
-* **Yapay Zeka Karar Destek Motoru (Mock AI Engine):** Girilen vital bulgular, kan değerleri (örn: WBC yüksekliği/Lökositoz) ve hasta semptomlarını analiz ederek doktorlara olası tanılar (Differential Diagnosis) ve tedavi tavsiyeleri sunar.
-* **Veri Doğrulama (Data Validation):** Pydantic V2 modelleri ile request ve response verileri strict (katı) tip kontrolünden geçirilerek veri bütünlüğü sağlanır.
+* **🧠 AI Karar Destek Motoru (AI Diagnostic Engine):** Hastanın semptomlarını, kan değerlerini (WBC, Glukoz) ve vitallerini (Nabız, SpO2) analiz ederek risk seviyesi, güven skoru ve olası tanılar (Differential Diagnoses) üreten kural tabanlı/algoritmik zeka.
+* **📊 Gelişmiş Hasta Panosu (Patient Dashboard):** Tailwind CSS ve Recharts kullanılarak tasarlanmış, doktorlara özel, modern ve ferah "Master-Detail" görünümlü klinik veri panosu.
+* **🔐 Güvenli Kimlik Doğrulama:** FastAPI OAuth2 ve JWT (JSON Web Tokens) ile rol tabanlı (Doktor/Hasta) erişim kontrolü ve şifrelenmiş veri yönetimi.
+* **🏥 Yapılandırılmış Klinik Veri:** Semptomlar, teşhisler, tedavi planları ve laboratuvar sonuçlarının PostgreSQL ilişkisel veritabanında (SQLAlchemy ORM) modüler olarak saklanması.
 
-## Kullanılan Teknolojiler (Tech Stack)
+## 🛠️ Kullanılan Teknolojiler
 
-* **Framework:** FastAPI (Python)
-* **Database:** PostgreSQL
-* **ORM:** SQLAlchemy
-* **Data Validation:** Pydantic
-* **Authentication:** JWT (python-jose), Passlib (Bcrypt)
-* **Server:** Uvicorn
+**Backend (API Motoru):**
+* Python 3.12+
+* FastAPI (Asenkron API Geliştirme)
+* SQLAlchemy (ORM) & Pydantic (Veri Doğrulama)
+* PostgreSQL (İlişkisel Veritabanı)
+* Passlib & Bcrypt (Şifreleme)
 
-## Kurulum ve Çalıştırma (Local Setup)
+**Frontend (Kullanıcı Arayüzü):**
+* Next.js & React (Turbopack ile hızlı derleme)
+* Tailwind CSS (Modern ve duyarlı tasarım)
+* Lucide React (Tıbbi ve profesyonel ikonlar)
+* Recharts (Vital veri trend grafikleri)
+* Axios (API İstek Yönetimi)
 
-Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin:
+---
 
-**1. Repoyu Klonlayın ve Sanal Ortam Oluşturun:**
+## 🚀 Kurulum ve Çalıştırma Rehberi
+
+Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin.
+
+### 1. Ön Koşullar
+* Bilgisayarınızda **Python 3.12+**, **Node.js** ve **PostgreSQL** kurulu olmalıdır.
+* PostgreSQL üzerinde boş bir veritabanı oluşturun (Örn: `case_share_db`).
+
+### 2. Backend (FastAPI) Kurulumu
+
 ```bash
-git clone [https://github.com/KULLANICI_ADIN/case-share-api.git](https://github.com/KULLANICI_ADIN/case-share-api.git)
+# Proje dizinine gidin
 cd case-share-api
+
+# Sanal ortam (Virtual Environment) oluşturun ve aktifleştirin
 python -m venv venv
-venv\Scripts\activate  # Windows için
+source venv/bin/activate  # Windows için: venv\Scripts\activate
+
+# Gerekli kütüphaneleri yükleyin
+pip install -r requirements.txt
