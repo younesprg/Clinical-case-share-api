@@ -1,27 +1,39 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Search, Bell, MessageCircle, ChevronDown, LogOut } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
     const { user, logout } = useAuth();
     const [showDropdown, setShowDropdown] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const router = useRouter();
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchTerm.trim()) {
+            router.push(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        }
+    };
 
     return (
         <header className="h-20 bg-transparent flex items-center justify-between px-8 z-10 relative">
             <div className="flex-1 max-w-xl">
-                <div className="relative">
+                <form onSubmit={handleSearch} className="relative">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Search size={18} className="text-slate-400" />
                     </div>
                     <input
                         type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="block w-full pl-11 pr-3 py-3 border-transparent rounded-2xl bg-white shadow-sm text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                        placeholder="Search appointment, patient or etc..."
+                        placeholder="Search ID, symptoms, diagnosis or AI result..."
                     />
-                    <button className="absolute inset-y-1.5 right-1.5 bg-blue-50 text-blue-600 px-4 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors">
+                    <button type="submit" className="absolute inset-y-1.5 right-1.5 bg-blue-50 text-blue-600 px-4 rounded-xl text-sm font-medium hover:bg-blue-100 transition-colors">
                         Search
                     </button>
-                </div>
+                </form>
             </div>
 
             <div className="flex items-center space-x-6 ml-8">
@@ -48,7 +60,7 @@ export default function Header() {
                             />
                         </div>
                         <div className="flex items-center text-sm font-medium text-slate-700">
-                            <span className="mr-1">{user?.title || 'Dr.'} {user?.name || 'Isaac Wick'}</span>
+                            <span className="mr-1">{user?.role === 'patient' ? '' : (user?.title || 'Dr.')} {user?.name || 'Isaac Wick'}</span>
                             <ChevronDown size={14} className="text-slate-400" />
                         </div>
                     </button>

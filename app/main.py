@@ -13,9 +13,18 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 from datetime import date
 
-
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
+
+from sqlalchemy import text
+with engine.connect() as con:
+    try:
+        # SQLite compatibility or direct Postgres modification 
+        con.execute(text("ALTER TABLE cases DROP CONSTRAINT IF EXISTS cases_patient_id_fkey;"))
+        con.execute(text("ALTER TABLE cases ADD CONSTRAINT cases_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;"))
+        con.commit()
+    except Exception as e:
+        print("Schema FK Migration skipped/failed:", e)
 
 app = FastAPI(
     title="Case-Share AI & Auth API",
@@ -65,6 +74,22 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    if db_user.role == models.UserRole.PATIENT:
+        age_val = 0
+        if db_user.date_of_birth:
+            today = date.today()
+            age_val = today.year - db_user.date_of_birth.year - ((today.month, today.day) < (db_user.date_of_birth.month, db_user.date_of_birth.day))
+            
+        db_patient = models.Patient(
+            user_id=db_user.id,
+            full_name=db_user.name,
+            age=age_val,
+            gender=db_user.gender or "Bilinmiyor"
+        )
+        db.add(db_patient)
+        db.commit()
+        
     return db_user
 
 @app.post("/login/", response_model=schemas.Token)
@@ -99,7 +124,63 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db), current_user: mo
     return user
 
 # ==========================================
-# 2. KLİNİK VAKA & AI ENDPOINT'LERİ (KORUMALI)
+# 2. HASTA YÖNETİMİ (PATIENT MANAGEMENT)
+# ==========================================
+@app.post("/patients/", response_model=schemas.PatientResponse, status_code=status.HTTP_201_CREATED)
+def create_patient(
+    patient: schemas.PatientCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Sisteme doktor tarafından yeni hasta ekler."""
+    if current_user.role != models.UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Sadece doktorlar hasta ekleyebilir.")
+        
+    db_patient = models.Patient(
+        full_name=patient.full_name,
+        age=patient.age,
+        gender=patient.gender
+    )
+    db.add(db_patient)
+    db.commit()
+    db.refresh(db_patient)
+    return db_patient
+
+@app.get("/patients/", response_model=List[schemas.PatientResponse])
+def get_patients(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """Sistemdeki tüm kayıtlı hastaları getirir (Gerçek uygulamada sadece doktora atanmış hastalar döner)."""
+    return db.query(models.Patient).order_by(models.Patient.id.asc()).all()
+
+@app.get("/patients/{patient_id}")
+def get_patient_by_id(patient_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    """ID'ye göre hasta ve ona bağlı kullanıcı demografik bilgilerini getirir."""
+    patient = db.query(models.Patient).filter(models.Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Hasta bulunamadı")
+        
+    user = patient.user
+    if not user:
+        # Fallback if no user linked
+        return {
+            "id": patient.id,
+            "name": patient.full_name,
+            "gender": patient.gender,
+            "date_of_birth": None,
+            "height": None,
+            "blood_type": None
+        }
+
+    return {
+        "id": patient.id, # Must return patient ID so the UI ID overlay matches the URL exactly
+        "name": user.name,
+        "gender": user.gender,
+        "date_of_birth": user.date_of_birth,
+        "height": user.height,
+        "blood_type": user.blood_type
+    }
+
+# ==========================================
+# 3. KLİNİK VAKA & AI ENDPOINT'LERİ (KORUMALI)
 # ==========================================
 @app.post("/cases/", response_model=schemas.CasePostResponse, status_code=status.HTTP_201_CREATED)
 def create_case(
@@ -114,29 +195,12 @@ def create_case(
         raise HTTPException(status_code=403, detail="Yetkisiz islem. Sadece doktorlar vaka girebilir.")
         
     # 2. Hasta var mı kontrolü
-    patient = db.query(models.User).filter(models.User.id == case.patient_id, models.User.role == models.UserRole.PATIENT).first()
+    patient = db.query(models.Patient).filter(models.Patient.id == case.patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Belirtilen ID'ye sahip bir hasta bulunamadi.")
 
-    # 3. YAPAY ZEKA (AI) ANALİZİNİ ÇALIŞTIR
-    wbc_value = case.blood_test.wbc if case.blood_test else None
-    
-    patient_age = 30
-    if patient.date_of_birth:
-        today = date.today()
-        patient_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
-
-    # AI motoruna verileri gönderip analiz sonucunu alıyoruz
-    ai_result_dict = ai_engine.generate_structured_ai_analysis(
-        patient_age=patient_age,
-        symptoms=case.symptoms,
-        heart_rate=case.heart_rate,
-        oxygen_saturation=case.oxygen_saturation,
-        blood_pressure=case.blood_pressure,
-        glucose_level=case.blood_test.glucose_level if case.blood_test else None,
-        wbc=wbc_value
-    )
-    ai_result = json.dumps(ai_result_dict, ensure_ascii=False)
+    # 3. YAPAY ZEKA (AI) İŞLEMİ ARTIK BURADA YAPILMIYOR (Gecikmeyi önlemek için)
+    # AI analizi frontend ilk kez detay sayfasına girdiğinde tetiklenecek ve önbelleğe (cache) alınacak.
 
     # 4. Vakayı Oluştur
     db_case = models.CasePost(
@@ -145,10 +209,11 @@ def create_case(
         heart_rate=case.heart_rate,
         blood_pressure=case.blood_pressure,
         body_temperature=case.body_temperature,
+        oxygen_saturation=case.oxygen_saturation,
         symptoms=case.symptoms,
         diagnosis=case.diagnosis,
         treatment_plan=case.treatment_plan,
-        ai_analysis_result=ai_result # AI sonucunu veritabanına kaydet
+        ai_analysis=None # AI sonucu henüz hesaplanmadı
     )
     
     db.add(db_case)
@@ -182,7 +247,7 @@ def get_cases(db: Session = Depends(get_db), current_user: models.User = Depends
 
 @app.get("/cases/{case_id}/ai-analysis", response_model=schemas.AIAnalysisResponse)
 def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    """Seçilen vakanın detaylı AI analizini JSON yapısında döndürür."""
+    """Seçilen vakanın detaylı AI analizini JSON yapısında döndürür. Veritabanında varsa cache'den okur, yoksa Gemini 3.1 LLM'i çağırır."""
     case = db.query(models.CasePost).filter(models.CasePost.id == case_id).first()
     if not case:
         raise HTTPException(status_code=404, detail="Vaka bulunamadı")
@@ -191,16 +256,19 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
     if current_user.role == models.UserRole.PATIENT and case.patient_id != current_user.id:
         raise HTTPException(status_code=403, detail="Bu vakayı görüntüleme yetkiniz yok.")
 
-    patient = db.query(models.User).filter(models.User.id == case.patient_id).first()
-    patient_age = 30
-    if patient and patient.date_of_birth:
-        today = date.today()
-        patient_age = today.year - patient.date_of_birth.year - ((today.month, today.day) < (patient.date_of_birth.month, patient.date_of_birth.day))
+    # 1. CACHE HIT: Eğer daha önce hesaplanıp kaydedildiyse, doğrudan veritabanından dön
+    if case.ai_analysis:
+        return case.ai_analysis
+
+    # 2. CACHE MISS: Hesaplama yoksa Gemini LLM motorunu çalıştır
+    patient = db.query(models.Patient).filter(models.Patient.id == case.patient_id).first()
+    patient_age = patient.age if patient else 30
 
     glucose = case.blood_test.glucose_level if case.blood_test else None
     wbc = case.blood_test.wbc if case.blood_test else None
 
-    result = ai_engine.generate_structured_ai_analysis(
+    # Gemini 3.1 Flash LLM Çalıştırılıyor...
+    result = ai_engine.generate_gemini_analysis(
         patient_age=patient_age,
         symptoms=case.symptoms,
         heart_rate=case.heart_rate,
@@ -209,4 +277,11 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
         glucose_level=glucose,
         wbc=wbc
     )
+    
+    # 3. Sonucu Veritabanına Kaydet (Cache)
+    case.ai_analysis = result
+    db.commit()
+    db.refresh(case)
+
+    # 4. Döndür
     return result

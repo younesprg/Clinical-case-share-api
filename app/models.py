@@ -1,6 +1,6 @@
 import enum
 from datetime import date
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, Table, Enum, Boolean, Date
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, Table, Enum, Boolean, Date, JSON
 from sqlalchemy.orm import relationship
 from app.db import Base
 
@@ -38,7 +38,19 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     authored_cases = relationship("CasePost", foreign_keys="[CasePost.author_id]", back_populates="author", cascade="all, delete-orphan")
-    patient_cases = relationship("CasePost", foreign_keys="[CasePost.patient_id]", back_populates="patient", cascade="all, delete-orphan")
+    patient_profile = relationship("Patient", back_populates="user", uselist=False, cascade="all, delete-orphan")
+
+class Patient(Base):
+    __tablename__ = 'patients'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), unique=True, nullable=False)
+    full_name = Column(String, index=True, nullable=False)
+    age = Column(Integer, nullable=False, default=0)
+    gender = Column(String, nullable=False, default="Bilinmiyor")
+    
+    user = relationship("User", back_populates="patient_profile")
+    cases = relationship("CasePost", back_populates="patient", cascade="all, delete-orphan")
 
 class DiseaseDictionary(Base):
     __tablename__ = 'diseases'
@@ -63,7 +75,7 @@ class CasePost(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     author_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
-    patient_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    patient_id = Column(Integer, ForeignKey('patients.id', ondelete="CASCADE"), nullable=False)
     
     heart_rate = Column(Integer)
     blood_pressure = Column(String)
@@ -74,9 +86,9 @@ class CasePost(Base):
     symptoms = Column(Text, nullable=False)
     diagnosis = Column(String)
     treatment_plan = Column(Text)
-    ai_analysis_result = Column(Text, nullable=True)
+    ai_analysis = Column(JSON, nullable=True)
     
     author = relationship("User", foreign_keys=[author_id], back_populates="authored_cases")
-    patient = relationship("User", foreign_keys=[patient_id], back_populates="patient_cases")
+    patient = relationship("Patient", foreign_keys=[patient_id], back_populates="cases")
     blood_test = relationship("BloodTest", back_populates="case", uselist=False)
     comorbidities = relationship("DiseaseDictionary", secondary=case_disease_link)

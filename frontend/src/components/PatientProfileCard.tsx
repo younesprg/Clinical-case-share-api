@@ -18,7 +18,7 @@ export default function PatientProfileCard({ patientId }: { patientId: string })
     useEffect(() => {
         const fetchPatient = async () => {
             try {
-                const response = await api.get(`/users/${patientId}`);
+                const response = await api.get(`/patients/${patientId}`);
                 setPatient(response.data);
             } catch (error) {
                 console.error("Failed to fetch patient details", error);

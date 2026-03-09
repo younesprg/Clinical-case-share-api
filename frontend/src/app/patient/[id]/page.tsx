@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import PatientProfileCard from '@/components/PatientProfileCard';
 import AIDiagnosticEngine from '@/components/AIDiagnosticEngine';
@@ -13,6 +13,8 @@ import { FileText, Activity, HeartPulse, ActivitySquare, Wind, Droplet, Microsco
 
 export default function PatientDashboard() {
     const params = useParams();
+    const searchParams = useSearchParams();
+    const caseIdParam = searchParams.get('caseId');
     const patientId = params.id as string;
     const [patientCases, setPatientCases] = useState<any[]>([]);
     const [selectedCase, setSelectedCase] = useState<any | null>(null);
@@ -27,7 +29,12 @@ export default function PatientDashboard() {
                 filteredCases.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
                 setPatientCases(filteredCases);
                 if (filteredCases.length > 0) {
-                    setSelectedCase(filteredCases[0]);
+                    if (caseIdParam) {
+                        const targetCase = filteredCases.find((c: any) => c.id.toString() === caseIdParam);
+                        setSelectedCase(targetCase || filteredCases[0]);
+                    } else {
+                        setSelectedCase(filteredCases[0]);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch patient cases", error);

@@ -10,14 +10,17 @@ import {
     HeartPulse
 } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function Sidebar() {
     const pathname = usePathname();
+    const { user } = useAuth();
 
     const navItems = [
         { icon: LayoutDashboard, href: '/cases', label: 'Dashboard' },
         { icon: Calendar, href: '/calendar', label: 'Appointments' },
         { icon: MessageSquare, href: '/messages', label: 'Messages' },
-        { icon: PlusSquare, href: '/cases/new', label: 'New Case' },
+        ...(user?.role === 'doctor' ? [{ icon: PlusSquare, href: '/cases/new', label: 'New Case' }] : []),
         { icon: FileText, href: '/reports', label: 'Reports' },
     ];
 
@@ -38,8 +41,8 @@ export default function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all ${isActive
-                                    ? 'bg-blue-50 text-blue-600 shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                ? 'bg-blue-50 text-blue-600 shadow-sm'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                 }`}
                             title={item.label}
                         >

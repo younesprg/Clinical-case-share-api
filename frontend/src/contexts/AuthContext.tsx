@@ -36,19 +36,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const res = await api.get('/users/me');
                     setUser(res.data);
 
-                    // Redirect to /cases if we are on login screen and already logged in
-                    if (pathname === '/login') {
+                    // Redirect to /cases if we are on login or register screen and already logged in
+                    if (pathname === '/login' || pathname === '/register') {
                         router.push('/cases');
                     }
                 } catch (err) {
                     localStorage.removeItem('token');
                     setUser(null);
-                    if (pathname !== '/login') {
+                    if (pathname !== '/login' && pathname !== '/register') {
                         router.push('/login');
                     }
                 }
             } else {
-                if (pathname !== '/login') {
+                if (pathname !== '/login' && pathname !== '/register') {
                     router.push('/login');
                 }
             }

@@ -55,6 +55,18 @@ class BloodTestResponse(BloodTestBase):
     case_id: int
     model_config = ConfigDict(from_attributes=True)
 
+class PatientBase(BaseModel):
+    full_name: str
+    age: int
+    gender: str
+
+class PatientCreate(PatientBase):
+    pass
+
+class PatientResponse(PatientBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
+
 class CasePostBase(BaseModel):
     heart_rate: Optional[int] = None
     blood_pressure: Optional[str] = None
@@ -68,18 +80,18 @@ class CasePostCreate(CasePostBase):
     patient_id: int
     disease_ids: Optional[List[int]] = [] 
     blood_test: Optional[BloodTestCreate] = None 
-                            
-class CasePostResponse(CasePostBase):
-    id: int
-    author_id: int
-    patient_id: int
-    ai_analysis_result: Optional[str] = None
-    blood_test: Optional[BloodTestResponse] = None
-    comorbidities: List[DiseaseResponse] = []
-    model_config = ConfigDict(from_attributes=True)
 
 class AIAnalysisResponse(BaseModel):
     risk_level: str
     confidence_score: int
     differential_diagnoses: List[str]
     clinical_recommendations: List[str]
+                            
+class CasePostResponse(CasePostBase):
+    id: int
+    author_id: int
+    patient_id: int
+    ai_analysis: Optional[AIAnalysisResponse] = None
+    blood_test: Optional[BloodTestResponse] = None
+    comorbidities: List[DiseaseResponse] = []
+    model_config = ConfigDict(from_attributes=True)

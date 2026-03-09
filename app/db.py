@@ -1,10 +1,14 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+# Güvenli kasadaki verileri yükle
+load_dotenv()
 
-# Format: postgresql://kullanici_adi:sifre@localhost/veritabani_adi
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:maxx77@localhost/case_share"
+# Şifreyi koddan değil, .env dosyasından çekiyoruz!
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

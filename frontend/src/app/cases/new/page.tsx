@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
-import { Activity, Thermometer, User, Pill, ActivitySquare } from 'lucide-react';
+import { Activity, Thermometer, User, Pill, ActivitySquare, AlertCircle } from 'lucide-react';
 
 export default function NewCasePage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Patient Dropdown State
+    const [patients, setPatients] = useState<any[]>([]);
+    const [isLoadingPatients, setIsLoadingPatients] = useState(true);
 
     const [formData, setFormData] = useState({
         patient_id: '',
@@ -24,7 +28,25 @@ export default function NewCasePage() {
         platelets: ''
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    useEffect(() => {
+        const fetchPatients = async () => {
+            try {
+                const res = await api.get('/patients/');
+                setPatients(res.data);
+                if (res.data.length > 0) {
+                    setFormData(prev => ({ ...prev, patient_id: res.data[0].id.toString() }));
+                }
+            } catch (err: any) {
+                console.error("Failed to fetch patients", err);
+                setError("Hastalar yüklenemedi. Lütfen önce bir hasta kaydı oluşturun.");
+            } finally {
+                setIsLoadingPatients(false);
+            }
+        };
+        fetchPatients();
+    }, []); // Removed dependency array on patients to prevent infinite loops, but ensure initial set works.
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -53,7 +75,19 @@ export default function NewCasePage() {
             await api.post('/cases/', payload);
             router.push('/cases');
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Failed to submit new case.");
+            console.error("Case Submission Error Details:", err.response?.data || err);
+
+            let errorMsg = "Failed to submit new case.";
+            if (err.response?.data?.detail) {
+                if (typeof err.response.data.detail === 'string') {
+                    errorMsg = err.response.data.detail;
+                } else if (Array.isArray(err.response.data.detail)) {
+                    // Handle FastAPI validation error list
+                    errorMsg = "Validation Error: " + err.response.data.detail.map((e: any) => e.msg).join(', ');
+                }
+            }
+
+            setError(errorMsg);
         } finally {
             setIsSubmitting(false);
         }
@@ -75,14 +109,38 @@ export default function NewCasePage() {
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center">
-                            <User className="text-blue-500 mr-2" size={20} />
-                            Basic Information
-                        </h3>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-slate-800 flex items-center">
+                                <User className="text-blue-500 mr-2" size={20} />
+                                Basic Information
+                            </h3>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Patient ID *</label>
-                                <input required type="number" name="patient_id" value={formData.patient_id} onChange={handleChange} className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900" placeholder="e.g. 1" />
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Select Patient *</label>
+                                {isLoadingPatients ? (
+                                    <div className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 text-sm flex items-center">
+                                        <Activity className="animate-spin mr-2" size={16} /> Hastalar Yükleniyor...
+                                    </div>
+                                ) : patients.length === 0 ? (
+                                    <div className="w-full px-4 py-2 border border-red-200 rounded-xl bg-red-50 text-red-600 text-sm">
+                                        Sistemde kayıtlı hasta bulunamadı.
+                                    </div>
+                                ) : (
+                                    <select
+                                        required
+                                        name="patient_id"
+                                        value={formData.patient_id}
+                                        onChange={(e) => setFormData({ ...formData, patient_id: e.target.value })}
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 bg-white"
+                                    >
+                                        {patients.map((p: any) => (
+                                            <option key={p.id} value={p.id.toString()}>
+                                                ID: {p.id} - {p.full_name} ({p.age}y, {p.gender})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Symptoms *</label>

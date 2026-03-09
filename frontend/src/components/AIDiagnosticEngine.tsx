@@ -32,9 +32,10 @@ export default function AIDiagnosticEngine({ caseId }: { caseId: number }) {
 
     if (isLoading) {
         return (
-            <div className="bg-slate-900 rounded-3xl p-6 border border-slate-700 shadow-lg flex flex-col items-center justify-center min-h-[300px]">
-                <BrainCircuit className="animate-pulse text-blue-500 mb-4" size={40} />
-                <p className="text-sm text-slate-400">AI Diagnostic Engine analyzing patient data...</p>
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+                <BrainCircuit className="animate-pulse text-purple-600 mb-4" size={48} />
+                <h3 className="font-semibold text-slate-800 text-lg mb-2">Gemini 3.1 Flash LLM</h3>
+                <p className="text-sm text-slate-500">Analyzing clinical data...</p>
             </div>
         );
     }

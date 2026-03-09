@@ -11,19 +11,33 @@ export default function CasesFeed() {
     const [cases, setCases] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
+    const { user } = useAuth();
+
+    const [patientsMap, setPatientsMap] = useState<Record<number, string>>({});
 
     useEffect(() => {
-        const fetchCases = async () => {
+        const fetchData = async () => {
             try {
-                const response = await api.get('/cases/');
-                setCases(response.data);
+                const [casesRes, patientsRes] = await Promise.all([
+                    api.get('/cases/'),
+                    api.get('/patients/')
+                ]);
+
+                setCases(casesRes.data);
+
+                const pMap: Record<number, string> = {};
+                patientsRes.data.forEach((p: any) => {
+                    pMap[p.id] = p.full_name;
+                });
+                setPatientsMap(pMap);
+
             } catch (error) {
-                console.error("Failed to fetch cases:", error);
+                console.error("Failed to fetch cases or patients:", error);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchCases();
+        fetchData();
     }, []);
 
     return (
@@ -33,13 +47,15 @@ export default function CasesFeed() {
                     <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Central Case Feed</h1>
                     <p className="text-slate-500 mt-1">Overview of all patient clinical cases</p>
                 </div>
-                <button
-                    onClick={() => router.push('/cases/new')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm transition-colors flex items-center"
-                >
-                    <FileText size={18} className="mr-2" />
-                    Add New Case
-                </button>
+                {user?.role === 'doctor' && (
+                    <button
+                        onClick={() => router.push('/cases/new')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-sm transition-colors flex items-center"
+                    >
+                        <FileText size={18} className="mr-2" />
+                        Add New Case
+                    </button>
+                )}
             </div>
 
             {isLoading ? (
@@ -52,14 +68,17 @@ export default function CasesFeed() {
                         <FileText size={32} />
                     </div>
                     <h3 className="text-xl font-semibold text-slate-800">No cases found</h3>
-                    <p className="text-slate-500 mt-2 max-w-sm mx-auto">There are no clinical cases recorded in the system yet. Click "Add New Case" to get started.</p>
+                    <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+                        There are no clinical cases recorded in the system yet.
+                        {user?.role === 'doctor' && ' Click "Add New Case" to get started.'}
+                    </p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {cases.map((c) => (
                         <div
                             key={c.id}
-                            onClick={() => router.push(`/patient/${c.patient_id}`)}
+                            onClick={() => router.push(`/patient/${c.patient_id}?caseId=${c.id}`)}
                             className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
                         >
                             <div className="flex justify-between items-start mb-4">
@@ -69,7 +88,7 @@ export default function CasesFeed() {
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                            Patient ID: {c.patient_id}
+                                            {patientsMap[c.patient_id] || `Patient ID: ${c.patient_id}`}
                                         </h3>
                                         <p className="text-xs text-slate-500 flex items-center mt-0.5">
                                             <CalendarDays size={12} className="mr-1 inline" />

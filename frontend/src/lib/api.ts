@@ -23,8 +23,8 @@ api.interceptors.response.use((response) => {
   return response;
 }, (error) => {
   if (error.response?.status === 401 && typeof window !== 'undefined') {
-    // Attempt to redirect if token is expired, but be careful not to cycle if we're already on /login
-    if (window.location.pathname !== '/login') {
+    // Attempt to redirect if token is expired, but be careful not to cycle if we're already on /login or /register
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
