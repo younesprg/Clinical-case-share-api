@@ -29,7 +29,7 @@ def generate_gemini_analysis(
     # 1. Gemini İstemcisini Başlat (GEMINI_API_KEY .env dosyasından otomatik alınır)
     client = genai.Client()
 
-    # 2. Sistem İstemini (Prompt) Hazırla
+    # 2. Sistem promptunu Hazırla
     system_instruction = (
         "Sen 20 yıllık tecrübeye sahip, uluslararası board sertifikalı bir uzman doktorsun. "
         "Amacın klinisyene ikinci bir görüş sunmaktır. "
@@ -55,7 +55,7 @@ def generate_gemini_analysis(
 
     # 4. Modeli Çağır ve JSON Çıktısı Zorla
     response = client.models.generate_content(
-        model='gemini-2.5-flash', # Or gemini-3.1-flash depending on exact availability, matching standard prompt.
+        model='gemini-2.5-flash', 
         contents=clinical_data,
         config=types.GenerateContentConfig(
             system_instruction=system_instruction,
