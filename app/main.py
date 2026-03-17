@@ -1,4 +1,4 @@
-# app/main.py
+
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from app.db import engine, get_db
 import app.models as models
 import app.schemas as schemas
 import app.auth as auth
-import app.ai_engine as ai_engine # Yapay Zeka motorumuzu dahil ettik
+import app.ai_engine as ai_engine 
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from datetime import date
@@ -19,7 +19,7 @@ models.Base.metadata.create_all(bind=engine)
 from sqlalchemy import text
 with engine.connect() as con:
     try:
-        # SQLite compatibility or direct Postgres modification 
+        
         con.execute(text("ALTER TABLE cases DROP CONSTRAINT IF EXISTS cases_patient_id_fkey;"))
         con.execute(text("ALTER TABLE cases ADD CONSTRAINT cases_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;"))
         con.commit()
@@ -33,11 +33,10 @@ app = FastAPI(
 )
 
 
-# app = FastAPI(...) satırının hemen altına ekle:
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], # Sadece bizim Next.js frontend'imize izin ver
-    allow_credentials=True,
+    allow_origins=["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -77,7 +76,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     if db_user.role == models.UserRole.PATIENT:
         age_val = 0
-        if db_user.date_of_birth:
+        if db_user.date_of_birth:7
             today = date.today()
             age_val = today.year - db_user.date_of_birth.year - ((today.month, today.day) < (db_user.date_of_birth.month, db_user.date_of_birth.day))
             
@@ -98,7 +97,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     # Kullanıcıyı email ile bul
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
     
-    # Kullanıcı yoksa veya şifre yanlışsa 401 Hata fırlat
+    
     if not user or not auth.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -160,7 +159,6 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db), current_us
         
     user = patient.user
     if not user:
-        # Fallback if no user linked
         return {
             "id": patient.id,
             "name": patient.full_name,
@@ -171,7 +169,7 @@ def get_patient_by_id(patient_id: int, db: Session = Depends(get_db), current_us
         }
 
     return {
-        "id": patient.id, # Must return patient ID so the UI ID overlay matches the URL exactly
+        "id": patient.id, 
         "name": user.name,
         "gender": user.gender,
         "date_of_birth": user.date_of_birth,
@@ -199,12 +197,10 @@ def create_case(
     if not patient:
         raise HTTPException(status_code=404, detail="Belirtilen ID'ye sahip bir hasta bulunamadi.")
 
-    # 3. YAPAY ZEKA (AI) İŞLEMİ ARTIK BURADA YAPILMIYOR (Gecikmeyi önlemek için)
-    # AI analizi frontend ilk kez detay sayfasına girdiğinde tetiklenecek ve önbelleğe (cache) alınacak.
 
     # 4. Vakayı Oluştur
     db_case = models.CasePost(
-        author_id=current_user.id, # Yazar ID'sini dışarıdan almıyoruz, token'dan otomatik çekiyoruz! Çok güvenli.
+        author_id=current_user.id, # Yazar ID'sini dışarıdan almıyoruz, token'dan otomatik çekiyoruz
         patient_id=case.patient_id,
         heart_rate=case.heart_rate,
         blood_pressure=case.blood_pressure,
@@ -247,27 +243,26 @@ def get_cases(db: Session = Depends(get_db), current_user: models.User = Depends
 
 @app.get("/cases/{case_id}/ai-analysis", response_model=schemas.AIAnalysisResponse)
 def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
-    """Seçilen vakanın detaylı AI analizini JSON yapısında döndürür. Veritabanında varsa cache'den okur, yoksa Gemini 3.1 LLM'i çağırır."""
     case = db.query(models.CasePost).filter(models.CasePost.id == case_id).first()
     if not case:
         raise HTTPException(status_code=404, detail="Vaka bulunamadı")
     
-    # Hasta veya doktor erişim kontrolü (Basit RBAC kontrolü, istersek ekleyebiliriz)
+    
     if current_user.role == models.UserRole.PATIENT and case.patient_id != current_user.id:
         raise HTTPException(status_code=403, detail="Bu vakayı görüntüleme yetkiniz yok.")
 
-    # 1. CACHE HIT: Eğer daha önce hesaplanıp kaydedildiyse, doğrudan veritabanından dön
+    # 1.Eğer daha önce hesaplanıp kaydedildiyse, doğrudan veritabanından dön
     if case.ai_analysis:
         return case.ai_analysis
 
-    # 2. CACHE MISS: Hesaplama yoksa Gemini LLM motorunu çalıştır
+    # 2.Hesaplama yoksa Gemini LLM motorunu çalıştır
     patient = db.query(models.Patient).filter(models.Patient.id == case.patient_id).first()
     patient_age = patient.age if patient else 30
 
     glucose = case.blood_test.glucose_level if case.blood_test else None
     wbc = case.blood_test.wbc if case.blood_test else None
 
-    # Gemini 3.1 Flash LLM Çalıştırılıyor...
+    # Gemini 3.1 Flash LLM 
     result = ai_engine.generate_gemini_analysis(
         patient_age=patient_age,
         symptoms=case.symptoms,
@@ -278,10 +273,9 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
         wbc=wbc
     )
     
-    # 3. Sonucu Veritabanına Kaydet (Cache)
+    # 3. Veritabanına kaydet
     case.ai_analysis = result
     db.commit()
     db.refresh(case)
 
-    # 4. Döndür
     return result
