@@ -1,8 +1,8 @@
-# app/auth.py
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
-import bcrypt # Passlib yerine doğrudan bcrypt kullanıyoruz
+import bcrypt 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -15,10 +15,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Şifreyi açıkça yazmak yerine os kütüphanesi ile sistemden çek
 SECRET_KEY = os.getenv("SECRET_KEY") 
 
-# Eğer .env dosyası yoksa veya okunamadıysa sistemi uyar (Güvenlik önlemi)
+
 if not SECRET_KEY:
     raise ValueError("Sistem Hatasi: SECRET_KEY bulunamadi. Lutfen .env dosyanizi kontrol edin.")
 
@@ -30,7 +29,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Kullanıcının girdiği şifre ile veritabanındaki kriptolu şifre eşleşiyor mu?"""
-    # bcrypt kütüphanesi byte (b"") formatında veri bekler, bu yüzden .encode('utf-8') kullanıyoruz
     password_bytes = plain_password.encode('utf-8')
     hashed_bytes = hashed_password.encode('utf-8')
     return bcrypt.checkpw(password_bytes, hashed_bytes)
@@ -40,7 +38,7 @@ def get_password_hash(password: str) -> str:
     password_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed_bytes = bcrypt.hashpw(password_bytes, salt)
-    return hashed_bytes.decode('utf-8') # Veritabanına String olarak kaydetmek için tekrar decode ediyoruz
+    return hashed_bytes.decode('utf-8') 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
