@@ -9,6 +9,7 @@ import VitalChartWidget from '@/components/VitalChartWidget';
 import PatientHistoryList from '@/components/PatientHistoryList';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Activity, HeartPulse, ActivitySquare, Wind, Droplet, Microscope } from 'lucide-react';
 
 export default function PatientDashboard() {
@@ -16,6 +17,8 @@ export default function PatientDashboard() {
     const searchParams = useSearchParams();
     const caseIdParam = searchParams.get('caseId');
     const patientId = params.id as string;
+    const { user } = useAuth();
+    const isDoctor = user?.role === 'doctor';
     const [patientCases, setPatientCases] = useState<any[]>([]);
     const [selectedCase, setSelectedCase] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,6 +48,16 @@ export default function PatientDashboard() {
         fetchPatientData();
     }, [patientId]);
 
+    const handleDeleteCase = (deletedCaseId: number) => {
+        setPatientCases(prev => {
+            const updated = prev.filter(c => c.id !== deletedCaseId);
+            if (selectedCase?.id === deletedCaseId) {
+                setSelectedCase(updated.length > 0 ? updated[0] : null);
+            }
+            return updated;
+        });
+    };
+
     const handleSelectCase = (caseObj: any) => {
         setSelectedCase(caseObj);
     };
@@ -55,7 +68,7 @@ export default function PatientDashboard() {
                 {/* Left Column: Profile & Appointments */}
                 <div className="xl:col-span-1 flex flex-col space-y-6">
                     <PatientProfileCard patientId={patientId} />
-                    <PatientHistoryList cases={patientCases} onSelectCase={handleSelectCase} selectedCaseId={selectedCase?.id} />
+                    <PatientHistoryList cases={patientCases} onSelectCase={handleSelectCase} onDeleteCase={handleDeleteCase} selectedCaseId={selectedCase?.id} isDoctor={isDoctor} />
                 </div>
 
                 {/* Middle/Right Column: Clinical Data */}

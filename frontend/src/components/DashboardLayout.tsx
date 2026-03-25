@@ -1,7 +1,6 @@
 "use client";
 
-import Sidebar from './Sidebar';
-import Header from './Header';
+import TopNavbar from './TopNavbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -17,14 +16,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
-            <Sidebar />
-            <div className="flex-1 ml-20 flex flex-col">
-                <Header />
-                <main className="flex-1 p-8 overflow-y-auto">
-                    {children}
-                </main>
-            </div>
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <TopNavbar />
+            <main className="flex-1 max-w-screen-2xl mx-auto w-full px-6 py-8 overflow-y-auto">
+                {children}
+            </main>
         </div>
     );
 }

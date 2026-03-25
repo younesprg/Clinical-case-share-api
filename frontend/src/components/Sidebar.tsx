@@ -7,7 +7,8 @@ import {
     PlusSquare,
     Settings,
     FileText,
-    HeartPulse
+    HeartPulse,
+    BookOpen
 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +22,7 @@ export default function Sidebar() {
         { icon: Calendar, href: '/calendar', label: 'Appointments' },
         { icon: MessageSquare, href: '/messages', label: 'Messages' },
         ...(user?.role === 'doctor' ? [{ icon: PlusSquare, href: '/cases/new', label: 'New Case' }] : []),
+        { icon: BookOpen, href: '/encyclopedia', label: 'Encyclopedia' },
         { icon: FileText, href: '/reports', label: 'Reports' },
     ];
 

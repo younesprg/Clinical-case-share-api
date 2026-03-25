@@ -76,7 +76,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     
     if db_user.role == models.UserRole.PATIENT:
         age_val = 0
-        if db_user.date_of_birth:7
+        if db_user.date_of_birth:
             today = date.today()
             age_val = today.year - db_user.date_of_birth.year - ((today.month, today.day) < (db_user.date_of_birth.month, db_user.date_of_birth.day))
             
@@ -229,6 +229,23 @@ def create_case(
     db.refresh(db_case)
     return db_case
 
+@app.delete("/cases/{case_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_case(
+    case_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Belirli bir vakayı siler. Yalnızca vakayı oluşturan doktor silebilir."""
+    case = db.query(models.CasePost).filter(models.CasePost.id == case_id).first()
+    if not case:
+        raise HTTPException(status_code=404, detail="Vaka bulunamadı")
+    if current_user.role != models.UserRole.DOCTOR:
+        raise HTTPException(status_code=403, detail="Sadece doktorlar vaka silebilir.")
+    if case.author_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Bu vakayı silme yetkiniz yok.")
+    db.delete(case)
+    db.commit()
+
 @app.get("/cases/", response_model=List[schemas.CasePostResponse])
 def get_cases(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
     """
@@ -279,3 +296,30 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
     db.refresh(case)
 
     return result
+
+
+# ============================================================
+# AI Medical Encyclopedia Endpoint
+# ============================================================
+@app.get("/api/encyclopedia/cases")
+async def encyclopedia_cases(
+    query: str,
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Europe PMC'den klinik vaka raporlarını çeker, Gemini ile Türkçe özetler.
+    Param: query — hastalık adı veya semptom (örn. 'pneumonia', 'chest pain')
+    """
+    if not query or len(query.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Lütfen geçerli bir arama terimi girin.")
+    
+    try:
+        summaries = await ai_engine.generate_encyclopedia_summary(query.strip())
+    except Exception as e:
+        print(f"Encyclopedia error: {e}")
+        raise HTTPException(status_code=502, detail="Dış API veya AI servisi yanıt vermedi. Lütfen tekrar deneyin.")
+
+    if not summaries:
+        return {"query": query, "results": [], "message": "Bu arama için yeterli klinik vaka bulunamadı."}
+
+    return {"query": query, "results": summaries}

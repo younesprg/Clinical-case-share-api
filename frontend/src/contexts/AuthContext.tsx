@@ -36,8 +36,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const res = await api.get('/users/me');
                     setUser(res.data);
 
-                    // Redirect to /cases if we are on login or register screen and already logged in
-                    if (pathname === '/login' || pathname === '/register') {
+                    // Redirect to /cases only if on the login screen while already logged in
+                    if (pathname === '/login') {
                         router.push('/cases');
                     }
                 } catch (err) {

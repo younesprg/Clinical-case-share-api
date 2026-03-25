@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import api from '@/lib/api';
 import { Activity, Thermometer, User, Pill, ActivitySquare, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function NewCasePage() {
     const router = useRouter();
@@ -141,6 +142,12 @@ export default function NewCasePage() {
                                         ))}
                                     </select>
                                 )}
+                                <p className="mt-1.5 text-xs text-slate-400">
+                                    Hasta listede yok mu?{' '}
+                                    <Link href="/register" className="text-blue-600 hover:underline font-medium">
+                                        Yeni hasta kaydet →
+                                    </Link>
+                                </p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Symptoms *</label>
