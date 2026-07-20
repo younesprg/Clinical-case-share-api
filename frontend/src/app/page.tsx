@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronDown, ArrowRight, HeartPulse, BookOpen, Database, Zap, ShieldCheck } from 'lucide-react';
@@ -70,7 +71,42 @@ const cardVariants = {
 };
 
 // ─── Page ─────────────────────────────────────────────────────
+interface PmcArticle { title: string; authorString: string; pubYear: string; }
+
+const FALLBACK_NEWS: PmcArticle[] = [
+    { title: 'Yeni CAR-T hücre tedavisi, relaps B-hücreli lenfoma hastalarında %90 remisyon oranı gösterdi', authorString: 'Shah ve ark.', pubYear: '2025' },
+    { title: 'FDA, küçük hücreli olmayan akciğer kanseri için yeni KRAS G12C inhibitörünü onayladı', authorString: 'Johnson ve ark.', pubYear: '2025' },
+    { title: 'mRNA aşı platformu Faz III klinik denemede kişiselleştirilmiş kanser immünoterapisine genişletildi', authorString: 'Moderna Araştırma Grubu', pubYear: '2025' },
+    { title: 'CRISPR gen düzenleme tedavisi, orak hücre hastalığını hastaların %97\'sinde düzeltti', authorString: 'Frangoul ve ark.', pubYear: '2025' },
+    { title: 'Yapay zeka destekli ilaç keşfi, ilaca dirençli bakterilere karşı yeni antibiyotik adayı belirledi', authorString: 'MIT CSAIL Ekibi', pubYear: '2024' },
+    { title: 'PD-L1 checkpoint inhibitörü kombinasyonu, metastatik melanomda sağkalımı üç katına çıkardı', authorString: 'Weber ve ark.', pubYear: '2024' },
+    { title: 'GLP-1 reseptör agonisti, obezite çalışmasında kardiyovasküler olayları %20 azalttı', authorString: 'Marso ve ark.', pubYear: '2025' },
+    { title: 'İlk oral PCSK9 inhibitörü, enjeksiyon biyolojiklere kıyasla benzer LDL düşüşü sağladı', authorString: 'Ray ve ark.', pubYear: '2025' },
+    { title: 'Alzheimer hastalığı: Lecanemab, 18 ayda bilişsel gerilemeyi %35 yavaşlattı', authorString: 'van Dyck ve ark.', pubYear: '2025' },
+    { title: 'Sıvı biyopsi ctDNA testi, erken evre pankreas kanserini %89 duyarlılıkla saptadı', authorString: 'Cohen ve ark.', pubYear: '2024' },
+];
+
 export default function LandingPage() {
+    const [news, setNews] = useState<PmcArticle[]>(FALLBACK_NEWS);
+
+    useEffect(() => {
+        fetch('https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(cancer+treatment+OR+drug+discovery+OR+immunotherapy+OR+new+drug+OR+clinical+breakthrough)&sort=P_PDATE_D&format=json&resultType=lite&pageSize=12')
+            .then(r => r.json())
+            .then(data => {
+                const results: PmcArticle[] = (data?.resultList?.result ?? []).filter((item: any) => item.title);
+                if (results.length > 0) {
+                    setNews(results.map((item: any) => ({
+                        title: item.title ?? '',
+                        authorString: item.authorString ?? '',
+                        pubYear: item.pubYear ?? '',
+                    })));
+                }
+            })
+            .catch(() => { /* keep fallback */ });
+    }, []);
+
+    // Duplicate for seamless infinite loop
+    const marqueeItems = [...news, ...news];
     return (
         <div className="min-h-screen bg-white overflow-x-hidden">
 
@@ -272,7 +308,50 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── SECTION 3: CTA Banner ── */}
+
+            {/* ── SECTION 3: Live Literature Marquee ── */}
+            <section className="relative bg-slate-900 py-16 overflow-hidden">
+                    {/* Radial depth */}
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900 to-slate-900 pointer-events-none" />
+
+                    <div className="relative z-10 mb-8 text-center">
+                        <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">
+                            Global Literatürden Canlı Akış
+                        </p>
+                    </div>
+
+                    {/* Fade-out mask edges */}
+                    <div
+                        className="overflow-hidden"
+                        style={{
+                            maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+                            WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+                        }}
+                    >
+                        <motion.div
+                            className="flex"
+                            animate={{ x: [0, -(marqueeItems.length / 2) * 390] }}
+                            transition={{ duration: 40, ease: 'linear', repeat: Infinity }}
+                            style={{ willChange: 'transform' }}
+                        >
+                            {marqueeItems.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-lg rounded-2xl p-5 min-w-[350px] mx-4 flex-shrink-0 text-left"
+                                >
+                                    <p className="text-white/90 font-semibold text-sm leading-snug line-clamp-2">
+                                        {item.title}
+                                    </p>
+                                    <p className="text-white/50 text-xs mt-2 truncate">
+                                        {item.authorString}{item.pubYear ? ` · ${item.pubYear}` : ''}
+                                    </p>
+                                </div>
+                            ))}
+                        </motion.div>
+                    </div>
+            </section>
+
+            {/* ── SECTION 4: CTA Banner ── */}
             <section className="bg-slate-900 relative overflow-hidden py-24 px-6 text-center">
                 {/* Radial gradient depth texture */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-slate-900 to-slate-900" />

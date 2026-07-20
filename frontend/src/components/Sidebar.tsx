@@ -18,7 +18,7 @@ export default function Sidebar() {
     const { user } = useAuth();
 
     const navItems = [
-        { icon: LayoutDashboard, href: '/cases', label: 'Dashboard' },
+        { icon: LayoutDashboard, href: '/dashboard', label: 'Dashboard' },
         { icon: Calendar, href: '/calendar', label: 'Appointments' },
         { icon: MessageSquare, href: '/messages', label: 'Messages' },
         ...(user?.role === 'doctor' ? [{ icon: PlusSquare, href: '/cases/new', label: 'New Case' }] : []),
@@ -36,7 +36,7 @@ export default function Sidebar() {
             <nav className="flex-1 w-full space-y-4 flex flex-col items-center">
                 {navItems.map((item) => {
                     // Check if active: exact match for /cases, or prefix match for /cases/
-                    const isActive = pathname === item.href || (pathname.startsWith('/cases') && item.href === '/cases' && pathname !== '/cases/new') || (pathname.startsWith('/patient') && item.href === '/cases');
+                    const isActive = pathname === item.href || (pathname.startsWith('/dashboard') && item.href === '/dashboard') || (pathname.startsWith('/patient') && item.href === '/dashboard');
 
                     return (
                         <Link

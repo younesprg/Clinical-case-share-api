@@ -16,7 +16,7 @@ function DiagnosisBadge({ diagnosis }: { diagnosis?: string }) {
 
     if (isPending) {
         return (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100/80 text-orange-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mr-1.5" />
                 Teşhis Bekleniyor
             </span>
@@ -24,7 +24,7 @@ function DiagnosisBadge({ diagnosis }: { diagnosis?: string }) {
     }
 
     return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100/80 text-green-700">
             <CheckCircle size={12} />
             {diagnosis}
         </span>
@@ -136,132 +136,133 @@ export default function CasesFeed() {
 
     return (
         <DashboardLayout>
-            {confirmDeleteId !== null && (
-                <DeleteConfirmModal onConfirm={handleDeleteConfirm} onCancel={() => setConfirmDeleteId(null)} isDeleting={isDeleting} />
-            )}
+            <div className="relative min-h-screen bg-gradient-to-br from-white via-slate-50 to-slate-100/80 p-4 md:p-8">
+                {confirmDeleteId !== null && (
+                    <DeleteConfirmModal onConfirm={handleDeleteConfirm} onCancel={() => setConfirmDeleteId(null)} isDeleting={isDeleting} />
+                )}
 
-            {/* Page Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Vaka Akışı</h1>
-                <p className="text-slate-400 text-sm mt-0.5">Tüm klinik vakalara genel bakış</p>
-            </div>
-
-            {/* Search + Filter Bar */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                {/* Search */}
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Hasta adı, semptom veya teşhis ara..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
+                {/* Page Header */}
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Vaka Akışı</h1>
+                    <p className="text-slate-500 text-sm mt-0.5">Tüm klinik vakalara genel bakış</p>
                 </div>
 
-                {/* Filter Tabs */}
-                <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 gap-1 shrink-0">
-                    <Filter size={14} className="text-slate-400 ml-2 mr-1" />
-                    {filterTabs.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveFilter(tab.key)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                                activeFilter === tab.key
+                {/* Search + Filter Bar */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                    {/* Search */}
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            placeholder="Hasta adı, semptom veya teşhis ara..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-200/50 backdrop-blur-xl border border-slate-300/60 shadow-sm rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div className="flex items-center bg-slate-200/50 backdrop-blur-xl border border-slate-300/60 shadow-sm rounded-2xl p-1 gap-1 shrink-0">
+                        <Filter size={14} className="text-slate-400 ml-2 mr-1" />
+                        {filterTabs.map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveFilter(tab.key)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${activeFilter === tab.key
                                     ? 'bg-blue-600 text-white shadow-sm'
                                     : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Results Count */}
-            {!isLoading && (
-                <p className="text-xs text-slate-400 mb-4">
-                    {filteredCases.length} vaka gösteriliyor{searchTerm && ` — "${searchTerm}" araması`}
-                </p>
-            )}
-
-            {/* States */}
-            {isLoading ? (
-                <div className="flex justify-center py-20">
-                    <Activity className="animate-pulse text-blue-500" size={40} />
-                </div>
-            ) : filteredCases.length === 0 ? (
-                <div className="bg-white rounded-3xl p-16 text-center border border-slate-100 shadow-sm">
-                    <div className="mx-auto w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
-                        <FileText size={32} />
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
-                    <h3 className="text-xl font-semibold text-slate-800">Vaka bulunamadı</h3>
-                    <p className="text-slate-500 mt-2 max-w-sm mx-auto text-sm">
-                        {searchTerm ? 'Farklı bir arama terimi deneyin.' : 'Henüz sisteme kayıtlı vaka yok.'}
+                </div>
+
+                {/* Results Count */}
+                {!isLoading && (
+                    <p className="text-xs text-slate-400 mb-4">
+                        {filteredCases.length} vaka gösteriliyor{searchTerm && ` — "${searchTerm}" araması`}
                     </p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {filteredCases.map((c) => (
-                        <div
-                            key={c.id}
-                            onClick={() => router.push(`/patient/${c.patient_id}?caseId=${c.id}`)}
-                            className="relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                        >
-                            {/* Delete Button */}
-                            {user?.role === 'doctor' && (
-                                <button
-                                    onClick={e => { e.stopPropagation(); setConfirmDeleteId(c.id); }}
-                                    className="absolute top-3.5 right-3.5 w-6 h-6 bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors z-10"
-                                    title="Vakayı Sil"
-                                >
-                                    <Minus size={12} strokeWidth={3} />
-                                </button>
-                            )}
+                )}
 
-                            {/* Patient Info */}
-                            <div className="flex items-center gap-3 mb-4 pr-8">
-                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
-                                    <User size={18} />
-                                </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-semibold text-slate-900 text-sm group-hover:text-blue-600 transition-colors truncate">
-                                        {patientsMap[c.patient_id] || `Hasta #${c.patient_id}`}
-                                    </h3>
-                                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                        <CalendarDays size={11} />
-                                        {new Date(c.created_at || Date.now()).toLocaleDateString('tr-TR')}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Vitals */}
-                            {c.heart_rate && (
-                                <div className="flex items-center gap-1.5 mb-3 text-sm text-slate-700">
-                                    <Heart size={14} className="text-red-400 shrink-0" fill="currentColor" />
-                                    <span className="font-semibold">{c.heart_rate}</span>
-                                    <span className="text-xs text-slate-400">bpm</span>
-                                </div>
-                            )}
-
-                            {/* Diagnosis Badge */}
-                            <div className="mb-3">
-                                <DiagnosisBadge diagnosis={c.diagnosis} />
-                            </div>
-
-                            {/* Symptoms */}
-                            <p className="text-xs text-slate-500 line-clamp-2 mb-4">{c.symptoms}</p>
-
-                            {/* Footer */}
-                            <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
-                                <span className="text-xs text-blue-600 font-medium group-hover:underline">Hasta Panosu</span>
-                                <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
-                            </div>
+                {/* States */}
+                {isLoading ? (
+                    <div className="flex justify-center py-20">
+                        <Activity className="animate-pulse text-blue-500" size={40} />
+                    </div>
+                ) : filteredCases.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-16 text-center border border-slate-100 shadow-sm">
+                        <div className="mx-auto w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                            <FileText size={32} />
                         </div>
-                    ))}
-                </div>
-            )}
+                        <h3 className="text-xl font-semibold text-slate-800">Vaka bulunamadı</h3>
+                        <p className="text-slate-500 mt-2 max-w-sm mx-auto text-sm">
+                            {searchTerm ? 'Farklı bir arama terimi deneyin.' : 'Henüz sisteme kayıtlı vaka yok.'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                        {filteredCases.map((c) => (
+                            <div
+                                key={c.id}
+                                onClick={() => router.push(`/patient/${c.patient_id}?caseId=${c.id}`)}
+                                className="relative bg-slate-200/50 backdrop-blur-xl border border-slate-300/60 shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:-translate-y-1 rounded-[1.5rem] p-6 transition-all duration-300 cursor-pointer group"
+                            >
+                                {/* Delete Button */}
+                                {user?.role === 'doctor' && (
+                                    <button
+                                        onClick={e => { e.stopPropagation(); setConfirmDeleteId(c.id); }}
+                                        className="absolute top-3.5 right-3.5 w-6 h-6 bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors z-10"
+                                        title="Vakayı Sil"
+                                    >
+                                        <Minus size={12} strokeWidth={3} />
+                                    </button>
+                                )}
+
+                                {/* Patient Info */}
+                                <div className="flex items-center gap-3 mb-4 pr-8">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                                        <User size={18} />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h3 className="font-semibold text-slate-900 text-sm group-hover:text-blue-600 transition-colors truncate">
+                                            {patientsMap[c.patient_id] || `Hasta #${c.patient_id}`}
+                                        </h3>
+                                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                            <CalendarDays size={11} />
+                                            {new Date(c.created_at || Date.now()).toLocaleDateString('tr-TR')}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Vitals */}
+                                {c.heart_rate && (
+                                    <div className="flex items-center gap-1.5 mb-3 text-sm text-slate-700">
+                                        <Heart size={14} className="text-red-400 shrink-0" fill="currentColor" />
+                                        <span className="font-semibold">{c.heart_rate}</span>
+                                        <span className="text-xs text-slate-400">bpm</span>
+                                    </div>
+                                )}
+
+                                {/* Diagnosis Badge */}
+                                <div className="mb-3">
+                                    <DiagnosisBadge diagnosis={c.diagnosis} />
+                                </div>
+
+                                {/* Symptoms */}
+                                <p className="text-xs text-slate-500 line-clamp-2 mb-4">{c.symptoms}</p>
+
+                                {/* Footer */}
+                                <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
+                                    <span className="text-xs text-blue-600 font-medium group-hover:underline">Hasta Panosu</span>
+                                    <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </DashboardLayout>
     );
 }
