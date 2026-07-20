@@ -13,13 +13,13 @@ export default function TopNavbar() {
     const [showDropdown, setShowDropdown] = useState(false);
 
     const navLinks = [
-        { href: '/cases', label: 'Vakalar', icon: LayoutDashboard },
+        { href: '/dashboard', label: 'Vakalar', icon: LayoutDashboard },
         { href: '/encyclopedia', label: 'Klinik Arşiv', icon: BookOpen },
     ];
 
     const isActive = (href: string) =>
-        href === '/cases'
-            ? pathname.startsWith('/cases') || pathname.startsWith('/patient')
+        href === '/dashboard'
+            ? pathname.startsWith('/dashboard') || pathname.startsWith('/patient')
             : pathname.startsWith(href);
 
     return (
@@ -29,7 +29,7 @@ export default function TopNavbar() {
                 {/* LEFT: Logo + Nav Links */}
                 <div className="flex items-center gap-8">
                     {/* Logo */}
-                    <Link href="/cases" className="flex items-center gap-2 font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                    <Link href="/" className="flex items-center gap-2 font-bold text-slate-800 hover:text-blue-600 transition-colors">
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                             <HeartPulse size={18} className="text-white" strokeWidth={2.5} />
                         </div>
@@ -42,11 +42,10 @@ export default function TopNavbar() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                                    isActive(link.href)
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isActive(link.href)
                                         ? 'bg-blue-50 text-blue-700'
                                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                                }`}
+                                    }`}
                             >
                                 <link.icon size={15} />
                                 {link.label}

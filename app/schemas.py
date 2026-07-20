@@ -15,8 +15,7 @@ class UserBase(BaseModel):
     name: str
     tc_kimlik: Optional[str] = None
     role: UserRole = UserRole.PATIENT
-    
-    # YENİ EKLENENLER
+
     date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     height: Optional[float] = None

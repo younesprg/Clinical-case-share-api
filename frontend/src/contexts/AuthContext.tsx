@@ -36,19 +36,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const res = await api.get('/users/me');
                     setUser(res.data);
 
-                    // Redirect to /cases only if on the login screen while already logged in
+                    // Redirect to /dashboard only if on the login screen while already logged in
                     if (pathname === '/login') {
-                        router.push('/cases');
+                        router.push('/dashboard');
                     }
                 } catch (err) {
                     localStorage.removeItem('token');
                     setUser(null);
-                    if (pathname !== '/login' && pathname !== '/register') {
+                    if (pathname !== '/login' && pathname !== '/register' && pathname !== '/') {
                         router.push('/login');
                     }
                 }
             } else {
-                if (pathname !== '/login' && pathname !== '/register') {
+                if (pathname !== '/login' && pathname !== '/register' && pathname !== '/') {
                     router.push('/login');
                 }
             }
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('token', token);
         const res = await api.get('/users/me');
         setUser(res.data);
-        router.push('/cases');
+        router.push('/dashboard');
     };
 
     const logout = () => {
