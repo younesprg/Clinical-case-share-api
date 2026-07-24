@@ -8,10 +8,13 @@ from app.db import engine, get_db
 import app.models as models
 import app.schemas as schemas
 import app.auth as auth
-import app.ai_engine as ai_engine 
+import app.ai_engine as ai_engine
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from datetime import date
+
+# Social Feed Router
+from app.routers import feed as feed_router
 
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
@@ -40,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Register routers ──────────────────────────────────────────
+app.include_router(feed_router.router)
 
 @app.get("/")
 def root():

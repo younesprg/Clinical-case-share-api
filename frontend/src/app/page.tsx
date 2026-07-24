@@ -232,7 +232,7 @@ export default function LandingPage() {
                         muted
                         playsInline
                         className="w-full h-full object-cover"
-                        style={{ opacity: 0.08, filter: 'blur(80px)', transform: 'scale(1.1)' }}
+                        style={{ opacity: 0.08, transform: 'scale(1.1)' }}
                     />
                     {/* White fade top/bottom so it doesn't bleed into neighbouring sections */}
                     <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-50 to-transparent" />
