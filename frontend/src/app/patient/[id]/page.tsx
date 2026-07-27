@@ -160,14 +160,14 @@ export default function PatientDashboard() {
                         )}
                     </div>
 
-                    {/* AI Engine Section */}
-                    {selectedCase && (
-                        <AIDiagnosticEngine caseId={selectedCase.id} />
-                    )}
-
                     {/* ECG Chart Snapshot */}
                     {selectedCase && selectedCase.heart_rate && (
                         <ECGWidget heartRate={selectedCase.heart_rate} />
+                    )}
+
+                    {/* AI Engine Section */}
+                    {selectedCase && (
+                        <AIDiagnosticEngine caseId={selectedCase.id} />
                     )}
                 </div>
             </div>

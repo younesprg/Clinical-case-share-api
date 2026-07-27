@@ -45,8 +45,8 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex text-slate-900 bg-slate-50 font-sans">
             {/* Left Graphic Side */}
-            <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden bg-slate-900">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-purple-900/40 to-slate-900 z-0"></div>
+            <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden bg-slate-900 bg-[url('/Clinical-decision-support.webp')] bg-cover bg-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-blue-900/60 to-slate-900/80 z-0"></div>
                 <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
                 <div className="absolute top-48 -right-24 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 

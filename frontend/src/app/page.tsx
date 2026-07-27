@@ -108,28 +108,28 @@ export default function LandingPage() {
     // Duplicate for seamless infinite loop
     const marqueeItems = [...news, ...news];
     return (
-        <div className="min-h-screen bg-white overflow-x-hidden">
+        <div className="min-h-screen bg-slate-900 overflow-x-hidden">
 
             {/* Sticky Navbar */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm">
+            <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-slate-900">
+                    <Link href="/" className="flex items-center gap-2 font-bold text-white">
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                             <HeartPulse size={18} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-base tracking-tight">Med<span className="text-blue-600">+</span></span>
+                        <span className="text-base tracking-tight">Med<span className="text-blue-500">+</span></span>
                     </Link>
 
-                    <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-slate-600">
-                        <Link href="/dashboard" className="hover:text-slate-900 transition-colors">Vakalar</Link>
-                        <Link href="/encyclopedia" className="hover:text-slate-900 transition-colors">Klinik Arşiv</Link>
+                    <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-slate-300">
+                        <Link href="/dashboard" className="hover:text-white transition-colors">Vakalar</Link>
+                        <Link href="/encyclopedia" className="hover:text-white transition-colors">Klinik Arşiv</Link>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Link href="/login" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors px-3 py-2">
+                        <Link href="/login" className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-3 py-2">
                             Giriş Yap
                         </Link>
-                        <Link href="/dashboard" className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors shadow-sm">
+                        <Link href="/dashboard" className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors shadow-sm">
                             Doktor Panelini Aç
                         </Link>
                     </div>
@@ -173,9 +173,9 @@ export default function LandingPage() {
                         transition={{ duration: 0.65, delay: 0.1 }}
                         className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight text-white mb-5"
                     >
-                        Klinik Kararlarınızda<br />
+                        Tıbbi Birikim.<br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-                            Güvenilir Yapay Zeka Asistanınız
+                            Mesleki Dayanışma.
                         </span>
                     </motion.h1>
 
@@ -185,7 +185,7 @@ export default function LandingPage() {
                         transition={{ duration: 0.65, delay: 0.2 }}
                         className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10"
                     >
-                        Güvenilir Klinik Analizler ve Global Literatür ile Teşhis Süreçlerinizi Hızlandırın.
+                        Hekimlerin ve geleceğin doktorlarının vaka analizi, ikinci görüş ve klinik bilgi paylaşım platformu.
                     </motion.p>
 
                     <motion.div
@@ -222,7 +222,7 @@ export default function LandingPage() {
             </section>
 
             {/* ── SECTION 2: Bento Feature Grid ── */}
-            <section className="relative bg-slate-50 py-24 px-6 overflow-hidden">
+            <section className="relative bg-slate-900 py-24 px-6 overflow-hidden">
                 {/* Aura: blurred hero video softly glowing behind cards */}
                 <div className="absolute inset-0 overflow-hidden">
                     <video
@@ -231,12 +231,12 @@ export default function LandingPage() {
                         loop
                         muted
                         playsInline
-                        className="w-full h-full object-cover"
-                        style={{ opacity: 0.08, transform: 'scale(1.1)' }}
+                        className="w-full h-full object-cover mix-blend-screen"
+                        style={{ opacity: 0.05, transform: 'scale(1.1)' }}
                     />
-                    {/* White fade top/bottom so it doesn't bleed into neighbouring sections */}
-                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-50 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-50 to-transparent" />
+                    {/* Dark fade top/bottom so it doesn't bleed into neighbouring sections */}
+                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-900 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900 to-transparent" />
                 </div>
 
                 <div className="relative z-10 max-w-6xl mx-auto">
@@ -247,11 +247,11 @@ export default function LandingPage() {
                         transition={{ duration: 0.55 }}
                         className="text-center mb-16"
                     >
-                        <p className="text-blue-600 text-sm font-bold uppercase tracking-widest mb-3">Platform Özellikleri</p>
-                        <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
-                            Tıbbın Geleceğini <span className="text-blue-600">Şimdi Yaşayın</span>
+                        <p className="text-blue-400 text-sm font-bold uppercase tracking-widest mb-3">Platform Özellikleri</p>
+                        <h2 className="text-4xl font-extrabold text-white tracking-tight">
+                            Tıbbın Geleceğini <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Şimdi Yaşayın</span>
                         </h2>
-                        <p className="text-slate-500 mt-4 max-w-xl mx-auto">
+                        <p className="text-slate-400 mt-4 max-w-xl mx-auto">
                             Klinisyenler için tasarlanmış, gerçek yapay zeka destekli araçlarla tanışın.
                         </p>
                     </motion.div>
@@ -265,7 +265,7 @@ export default function LandingPage() {
                                 whileInView="visible"
                                 viewport={{ once: true, amount: 0.2 }}
                                 variants={cardVariants}
-                                className="bg-white/40 backdrop-blur-xl rounded-3xl p-7 border border-white/60 shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.10)] transition-all duration-300 hover:-translate-y-1 flex flex-col"
+                                className="bg-white/5 backdrop-blur-xl rounded-3xl p-7 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:bg-white/10 transition-all duration-300 hover:-translate-y-1 flex flex-col"
                             >
                                 <div className="mb-6 flex items-center justify-center h-24">
                                     <motion.img
@@ -280,8 +280,8 @@ export default function LandingPage() {
                                 <span className={`inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${f.badgeBg} mb-4`}>
                                     {f.badge}
                                 </span>
-                                <h3 className="text-slate-900 font-bold text-lg leading-snug mb-3">{f.headline}</h3>
-                                <p className="text-slate-500 text-sm leading-relaxed flex-1">{f.description}</p>
+                                <h3 className="text-white font-bold text-lg leading-snug mb-3">{f.headline}</h3>
+                                <p className="text-slate-400 text-sm leading-relaxed flex-1">{f.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -291,7 +291,7 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, amount: 0.3 }}
                         transition={{ duration: 0.55, delay: 0.4 }}
-                        className="mt-12 grid grid-cols-3 divide-x divide-white/40 border border-white/40 rounded-3xl overflow-hidden bg-white/50 backdrop-blur-lg shadow-sm"
+                        className="mt-12 grid grid-cols-3 divide-x divide-white/10 border border-white/10 rounded-3xl overflow-hidden bg-white/5 backdrop-blur-lg shadow-sm"
                     >
                         {[
                             { icon: Database, value: '40M+', label: 'Biyomedikal Makale' },
@@ -311,44 +311,44 @@ export default function LandingPage() {
 
             {/* ── SECTION 3: Live Literature Marquee ── */}
             <section className="relative bg-slate-900 py-16 overflow-hidden">
-                    {/* Radial depth */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900 to-slate-900 pointer-events-none" />
+                {/* Radial depth */}
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/30 via-slate-900 to-slate-900 pointer-events-none" />
 
-                    <div className="relative z-10 mb-8 text-center">
-                        <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">
-                            Global Literatürden Canlı Akış
-                        </p>
-                    </div>
+                <div className="relative z-10 mb-8 text-center">
+                    <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold">
+                        Global Literatürden Canlı Akış
+                    </p>
+                </div>
 
-                    {/* Fade-out mask edges */}
-                    <div
-                        className="overflow-hidden"
-                        style={{
-                            maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
-                            WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
-                        }}
+                {/* Fade-out mask edges */}
+                <div
+                    className="overflow-hidden"
+                    style={{
+                        maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+                        WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+                    }}
+                >
+                    <motion.div
+                        className="flex"
+                        animate={{ x: [0, -(marqueeItems.length / 2) * 390] }}
+                        transition={{ duration: 40, ease: 'linear', repeat: Infinity }}
+                        style={{ willChange: 'transform' }}
                     >
-                        <motion.div
-                            className="flex"
-                            animate={{ x: [0, -(marqueeItems.length / 2) * 390] }}
-                            transition={{ duration: 40, ease: 'linear', repeat: Infinity }}
-                            style={{ willChange: 'transform' }}
-                        >
-                            {marqueeItems.map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    className="bg-white/10 backdrop-blur-md border border-white/20 shadow-lg rounded-2xl p-5 min-w-[350px] mx-4 flex-shrink-0 text-left"
-                                >
-                                    <p className="text-white/90 font-semibold text-sm leading-snug line-clamp-2">
-                                        {item.title}
-                                    </p>
-                                    <p className="text-white/50 text-xs mt-2 truncate">
-                                        {item.authorString}{item.pubYear ? ` · ${item.pubYear}` : ''}
-                                    </p>
-                                </div>
-                            ))}
-                        </motion.div>
-                    </div>
+                        {marqueeItems.map((item, idx) => (
+                            <div
+                                key={idx}
+                                className="bg-white/10 backdrop-blur-md border border-white/20 shadow-lg rounded-2xl p-5 min-w-[350px] mx-4 flex-shrink-0 text-left"
+                            >
+                                <p className="text-white/90 font-semibold text-sm leading-snug line-clamp-2">
+                                    {item.title}
+                                </p>
+                                <p className="text-white/50 text-xs mt-2 truncate">
+                                    {item.authorString}{item.pubYear ? ` · ${item.pubYear}` : ''}
+                                </p>
+                            </div>
+                        ))}
+                    </motion.div>
+                </div>
             </section>
 
             {/* ── SECTION 4: CTA Banner ── */}

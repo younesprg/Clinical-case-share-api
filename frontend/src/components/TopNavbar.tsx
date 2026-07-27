@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { HeartPulse, BookOpen, LayoutDashboard, ChevronDown, LogOut, PlusCircle } from 'lucide-react';
+import { HeartPulse, BookOpen, LayoutDashboard, ChevronDown, LogOut, PlusCircle, Globe } from 'lucide-react';
 import { useState } from 'react';
 
 export default function TopNavbar() {
@@ -14,6 +14,7 @@ export default function TopNavbar() {
 
     const navLinks = [
         { href: '/dashboard', label: 'Vakalar', icon: LayoutDashboard },
+        { href: '/feed', label: 'Sosyal Akış', icon: Globe },
         { href: '/encyclopedia', label: 'Klinik Arşiv', icon: BookOpen },
     ];
 

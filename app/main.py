@@ -25,6 +25,11 @@ with engine.connect() as con:
         
         con.execute(text("ALTER TABLE cases DROP CONSTRAINT IF EXISTS cases_patient_id_fkey;"))
         con.execute(text("ALTER TABLE cases ADD CONSTRAINT cases_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;"))
+        
+        # Social Feed eklentileri için User tablosuna yeni sütunları ekle
+        con.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS medical_role VARCHAR DEFAULT 'medical_student';"))
+        con.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;"))
+        
         con.commit()
     except Exception as e:
         print("Schema FK Migration skipped/failed:", e)
@@ -307,6 +312,9 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
 # ============================================================
 # AI Medical Encyclopedia Endpoint
 # ============================================================
+import time
+ENCYCLOPEDIA_CACHE = {}
+
 @app.get("/api/encyclopedia/cases")
 async def encyclopedia_cases(
     query: str,
@@ -316,11 +324,21 @@ async def encyclopedia_cases(
     Europe PMC'den klinik vaka raporlarını çeker, Gemini ile Türkçe özetler.
     Param: query — hastalık adı veya semptom (örn. 'pneumonia', 'chest pain')
     """
+    global ENCYCLOPEDIA_CACHE
     if not query or len(query.strip()) < 2:
         raise HTTPException(status_code=400, detail="Lütfen geçerli bir arama terimi girin.")
     
+    query = query.strip()
+    cache_key = query.lower()
+    
+    # Check cache (expire after 12 hours = 43200 seconds)
+    if cache_key in ENCYCLOPEDIA_CACHE:
+        cached_time, cached_data = ENCYCLOPEDIA_CACHE[cache_key]
+        if time.time() - cached_time < 43200:
+            return {"query": query, "results": cached_data, "cached": True}
+    
     try:
-        summaries = await ai_engine.generate_encyclopedia_summary(query.strip())
+        summaries = await ai_engine.generate_encyclopedia_summary(query)
     except Exception as e:
         print(f"Encyclopedia error: {e}")
         raise HTTPException(status_code=502, detail="Dış API veya AI servisi yanıt vermedi. Lütfen tekrar deneyin.")
@@ -328,4 +346,5 @@ async def encyclopedia_cases(
     if not summaries:
         return {"query": query, "results": [], "message": "Bu arama için yeterli klinik vaka bulunamadı."}
 
-    return {"query": query, "results": summaries}
+    ENCYCLOPEDIA_CACHE[cache_key] = (time.time(), summaries)
+    return {"query": query, "results": summaries}
