@@ -15,6 +15,8 @@ from datetime import date
 
 # Social Feed Router
 from app.routers import feed as feed_router
+# Triage Bot Router
+from app.routers import triage as triage_router
 
 # Veritabanı tablolarını oluştur
 models.Base.metadata.create_all(bind=engine)
@@ -51,6 +53,7 @@ app.add_middleware(
 
 # ── Register routers ──────────────────────────────────────────
 app.include_router(feed_router.router)
+app.include_router(triage_router.router)
 
 @app.get("/")
 def root():

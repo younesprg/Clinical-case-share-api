@@ -90,6 +90,9 @@ class User(Base):
     post_likes      = relationship("PostLike", back_populates="user", cascade="all, delete-orphan")
     bookmarks       = relationship("PostBookmark", back_populates="user", cascade="all, delete-orphan")
 
+    # Triage
+    triage_sessions = relationship("TriageSession", back_populates="user", cascade="all, delete-orphan")
+
 
 # ══════════════════════════════════════════════════════════════
 # PATIENT  (unchanged)
@@ -272,3 +275,37 @@ class PostBookmark(Base):
 
     post    = relationship("Post", back_populates="bookmarks")
     user    = relationship("User", back_populates="bookmarks")
+
+
+# ══════════════════════════════════════════════════════════════
+# TRIAGE (Triyaj Bot) MODULE
+# ══════════════════════════════════════════════════════════════
+
+class TriageSession(Base):
+    """24-saatlik triyaj bot sohbet oturumu. Kullanıcı başına."""
+    __tablename__ = 'triage_sessions'
+
+    id         = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)  # created_at + 24 saat
+
+    user       = relationship("User", back_populates="triage_sessions")
+    messages   = relationship(
+        "TriageMessage", back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="TriageMessage.created_at"
+    )
+
+
+class TriageMessage(Base):
+    """Tek bir sohbet mesajı (kullanıcı ya da bot). TriageSession'a bağlı."""
+    __tablename__ = 'triage_messages'
+
+    id         = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey('triage_sessions.id', ondelete="CASCADE"), nullable=False, index=True)
+    role       = Column(String, nullable=False)   # 'user' | 'assistant'
+    content    = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    session    = relationship("TriageSession", back_populates="messages")

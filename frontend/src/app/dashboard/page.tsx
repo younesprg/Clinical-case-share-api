@@ -136,7 +136,7 @@ export default function CasesFeed() {
 
     return (
         <DashboardLayout>
-            <div className="relative min-h-screen bg-gradient-to-br from-white via-slate-50 to-slate-100/80 p-4 md:p-8">
+            <div className="relative p-4 md:p-8">
                 {confirmDeleteId !== null && (
                     <DeleteConfirmModal onConfirm={handleDeleteConfirm} onCancel={() => setConfirmDeleteId(null)} isDeleting={isDeleting} />
                 )}

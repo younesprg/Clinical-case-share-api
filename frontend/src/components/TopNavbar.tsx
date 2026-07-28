@@ -3,28 +3,18 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { HeartPulse, BookOpen, LayoutDashboard, ChevronDown, LogOut, PlusCircle, Globe } from 'lucide-react';
-import { useState } from 'react';
+import { HeartPulse, ChevronDown, LogOut, PlusCircle, Zap } from 'lucide-react';
+import { useState, ReactNode } from 'react';
 
-export default function TopNavbar() {
+export default function TopNavbar({ rightExtra }: { rightExtra?: ReactNode }) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
     const [showDropdown, setShowDropdown] = useState(false);
 
-    const navLinks = [
-        { href: '/dashboard', label: 'Vakalar', icon: LayoutDashboard },
-        { href: '/feed', label: 'Sosyal Akış', icon: Globe },
-        { href: '/encyclopedia', label: 'Klinik Arşiv', icon: BookOpen },
-    ];
-
-    const isActive = (href: string) =>
-        href === '/dashboard'
-            ? pathname.startsWith('/dashboard') || pathname.startsWith('/patient')
-            : pathname.startsWith(href);
 
     return (
-        <nav className="sticky top-0 z-50 bg-white border-b border-slate-100 shadow-sm">
+        <nav className="sticky top-0 z-50 bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
             <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
 
                 {/* LEFT: Logo + Nav Links */}
@@ -36,27 +26,29 @@ export default function TopNavbar() {
                         </div>
                         <span className="text-base tracking-tight">Med<span className="text-blue-600">+</span></span>
                     </Link>
-
-                    {/* Nav Links */}
-                    <div className="flex items-center gap-1">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isActive(link.href)
-                                        ? 'bg-blue-50 text-blue-700'
-                                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                                    }`}
-                            >
-                                <link.icon size={15} />
-                                {link.label}
-                            </Link>
-                        ))}
-                    </div>
                 </div>
 
                 {/* RIGHT: Add Case + Avatar */}
                 <div className="flex items-center gap-3">
+                    {/* Render extra actions passed from specific pages */}
+                    {rightExtra && (
+                        <div className="flex items-center">
+                            {rightExtra}
+                        </div>
+                    )}
+
+                    {/* Hızlı Teşhis button — visible for all except on triage page itself */}
+                    {pathname !== '/triage' && (
+                        <Link
+                            href="/triage"
+                            className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all shadow-md hover:shadow-lg hover:opacity-90 active:scale-95"
+                            style={{ background: "linear-gradient(135deg, #7c3aed, #06b6d4)" }}
+                        >
+                            <Zap size={15} />
+                            Hızlı Teşhis
+                        </Link>
+                    )}
+
                     {user?.role === 'doctor' && (
                         <button
                             onClick={() => router.push('/cases/new')}

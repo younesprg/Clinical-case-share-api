@@ -228,3 +228,36 @@ class PostResponse(PostBase):
 
 # Resolve forward references for threaded comments
 PostCommentResponse.model_rebuild()
+
+
+# ══════════════════════════════════════════════════════════════
+# TRIAGE BOT
+# ══════════════════════════════════════════════════════════════
+
+class TriageChatRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    session_id: Optional[int] = None  # None → yeni oturum başlat
+
+class TriageMessageSchema(BaseModel):
+    role: str  # 'user' | 'assistant'
+    content: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class TriageChatResponse(BaseModel):
+    session_id: int
+    reply: str
+    messages: List[TriageMessageSchema]
+
+class TriageHistoryResponse(BaseModel):
+    session_id: int
+    created_at: datetime
+    expires_at: datetime
+    messages: List[TriageMessageSchema]
+    model_config = ConfigDict(from_attributes=True)
+
+class TriageSessionSummary(BaseModel):
+    session_id: int
+    created_at: datetime
+    preview_text: str
+    model_config = ConfigDict(from_attributes=True)

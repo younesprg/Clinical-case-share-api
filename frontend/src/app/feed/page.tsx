@@ -10,6 +10,7 @@ import {
     LinkIcon, Send, BadgeCheck, Globe, FolderOpen, BookmarkCheck, Settings,
     Zap, Bot, Trophy, Newspaper, Loader2, ChevronDown, Sparkles
 } from 'lucide-react';
+import SidePanel from '@/components/SidePanel';
 
 // ═══════════════════════════════════════════════════
 // SHARED STYLES
@@ -32,6 +33,7 @@ const MOCK_POSTS = [
         content: "35 yaşında erkek hasta, ani başlayan şiddetli baş ağrısı ve bulanık görme ile başvurdu. BT normal, LP'de artmış basınç saptandı. İdyopatik intrakraniyal hipertansiyon tanısı konularak asetazolamid tedavisi başlandı.",
         category: "Nöroloji",
         tags: ["#NadirVaka", "#İdyopatikİntrakraniyalHipertansiyon"],
+        imageUrl: "https://images.unsplash.com/photo-1559757175-5700dde675bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
         likes: 24,
         comments: 8,
         time: "2 saat önce",
@@ -66,7 +68,7 @@ function FeedNavbar() {
     const [showDropdown, setShowDropdown] = useState(false);
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+        <nav className="sticky top-0 z-50 bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
             <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
                 {/* Left: Logo */}
                 <Link href="/dashboard" className="flex items-center gap-2 font-bold text-slate-800 hover:text-blue-600 transition-colors">
@@ -124,82 +126,6 @@ function FeedNavbar() {
 }
 
 // ═══════════════════════════════════════════════════
-// LEFT SIDEBAR — Fixed, flush with navbar
-// ═══════════════════════════════════════════════════
-
-function SidePanel() {
-    const { user } = useAuth();
-
-    const displayName = user?.role === 'doctor'
-        ? `${user?.title || 'Dr.'} ${user?.name}`
-        : user?.name || 'Kullanıcı';
-
-    const displayRole = user?.specialty || 'Tıp Profesyoneli';
-
-    const menuItems = [
-        { icon: Globe, label: "Sosyal Akış", active: true, href: "/feed" },
-        { icon: FolderOpen, label: "Klinik Vakalar", active: false, href: "/dashboard" },
-        { icon: BookmarkCheck, label: "Kaydedilenler", active: false, href: "#" },
-        { icon: Sparkles, label: "Klinik Arşiv", active: false, href: "/encyclopedia" },
-        { icon: Zap, label: "Hızlı Teşhis", active: false, href: "#" },
-        { icon: Settings, label: "Ayarlar", active: false, href: "#" },
-    ];
-
-    return (
-        <aside className="hidden lg:flex fixed left-0 top-[3.5rem] bottom-0 w-64 bg-white/60 backdrop-blur-2xl border-r border-slate-200/50 flex-col z-40">
-            {/* Profile Section */}
-            <div className="flex flex-col items-center text-center px-5 pt-6 pb-4 border-b border-slate-200/40">
-                <img
-                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=c7d2fe&color=3730a3&bold=true&size=80`}
-                    alt="Avatar"
-                    className="w-14 h-14 rounded-full border-[3px] border-white shadow-md mb-3"
-                />
-                <div className="flex items-center gap-1.5 mb-0.5">
-                    <h3 className="font-bold text-slate-900 text-sm">{displayName}</h3>
-                    <BadgeCheck size={15} className="text-blue-500 fill-blue-100" />
-                </div>
-                <p className="text-xs text-slate-500 mb-3">{displayRole}</p>
-
-                <div className="flex gap-6 text-center border-t border-slate-200/40 pt-3 w-full justify-center">
-                    <div>
-                        <p className="text-base font-bold text-slate-800">12</p>
-                        <p className="text-[11px] text-slate-400">Vaka</p>
-                    </div>
-                    <div className="w-px bg-slate-200/60" />
-                    <div>
-                        <p className="text-base font-bold text-slate-800">145</p>
-                        <p className="text-[11px] text-slate-400">Beğeni</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Navigation Section */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {menuItems.map((item) => (
-                    <Link
-                        key={item.label}
-                        href={item.href}
-                        className={`flex items-center gap-3 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
-                            item.active
-                                ? 'bg-blue-500/10 text-blue-700 shadow-sm border border-blue-200/40'
-                                : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
-                        }`}
-                    >
-                        <item.icon size={18} strokeWidth={item.active ? 2.5 : 2} />
-                        {item.label}
-                    </Link>
-                ))}
-            </nav>
-
-            {/* Bottom branding */}
-            <div className="px-5 py-4 border-t border-slate-200/40">
-                <p className="text-[10px] text-slate-400 text-center">© 2026 Med+ AI Systems</p>
-            </div>
-        </aside>
-    );
-}
-
-// ═══════════════════════════════════════════════════
 // MIDDLE COLUMN — Create Post + Feed
 // ═══════════════════════════════════════════════════
 
@@ -247,7 +173,7 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
     const [saved, setSaved] = useState(false);
 
     return (
-        <div className={`${GLASS} hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300`}>
+        <div className={`${GLASS} !p-8 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300`}>
             {/* Author header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -272,6 +198,17 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
             {/* Content */}
             <p className="text-sm text-slate-700 leading-relaxed mb-4">{post.content}</p>
 
+            {/* Media (if exists) */}
+            {post.imageUrl && (
+                <div className="mb-4 w-full">
+                    <img 
+                        src={post.imageUrl} 
+                        alt="Klinik Görsel" 
+                        className="w-full max-h-[520px] object-cover rounded-2xl border border-slate-200/50 shadow-sm"
+                    />
+                </div>
+            )}
+
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-4">
                 {post.tags.map((tag) => (
@@ -285,11 +222,10 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
             <div className="flex items-center justify-between pt-3 border-t border-slate-200/40">
                 <button
                     onClick={() => setLiked(!liked)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        liked
-                            ? 'text-red-500 bg-red-50/80'
-                            : 'text-slate-500 hover:text-red-500 hover:bg-red-50/50'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${liked
+                        ? 'text-red-500 bg-red-50/80'
+                        : 'text-slate-500 hover:text-red-500 hover:bg-red-50/50'
+                        }`}
                 >
                     <Heart size={15} fill={liked ? 'currentColor' : 'none'} />
                     {liked ? post.likes + 1 : post.likes}
@@ -300,11 +236,10 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
                 </button>
                 <button
                     onClick={() => setSaved(!saved)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        saved
-                            ? 'text-amber-500 bg-amber-50/80'
-                            : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50/50'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${saved
+                        ? 'text-amber-500 bg-amber-50/80'
+                        : 'text-slate-500 hover:text-amber-500 hover:bg-amber-50/50'
+                        }`}
                 >
                     <Bookmark size={15} fill={saved ? 'currentColor' : 'none'} />
                     {saved ? 'Kaydedildi' : 'Kaydet'}
@@ -390,23 +325,44 @@ function EuropePMCRadar() {
 
 function MedAIAssistant() {
     return (
-        <div className="bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10 backdrop-blur-2xl border-[1.5px] border-blue-400/30 shadow-[0_8px_30px_rgba(59,130,246,0.1)] rounded-[1.5rem] p-5">
-            <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
-                    <Bot size={16} className="text-white" />
+        <Link href="/triage" className="block group">
+            <div
+                className="relative overflow-hidden rounded-[1.5rem] p-5 border border-white/20 shadow-[0_8px_30px_rgba(124,58,237,0.25)] transition-all duration-300 group-hover:shadow-[0_12px_40px_rgba(124,58,237,0.4)] group-hover:-translate-y-0.5"
+                style={{ background: "linear-gradient(135deg, #2d1b69 0%, #6d28d9 40%, #0e7490 100%)" }}
+            >
+                {/* Mesh blobs */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-purple-400/20 blur-xl" />
+                <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-cyan-400/20 blur-xl" />
+
+                <div className="relative flex items-center gap-3 mb-3">
+                    {/* Mini orb */}
+                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+                        style={{
+                            background: "radial-gradient(circle at 35% 35%, #c084fc, #7c3aed, #06b6d4)",
+                            boxShadow: "0 0 20px rgba(168,85,247,0.6)"
+                        }}
+                    >
+                        <Zap size={16} className="text-white" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-white text-sm">Triyaj Asistanı</h3>
+                        <p className="text-purple-300 text-[11px]">Med+ AI · Hızlı Teşhis</p>
+                    </div>
                 </div>
-                <h3 className="font-bold text-slate-800 text-sm">Med+ AI Asistan</h3>
+
+                <p className="relative text-xs text-white/70 leading-relaxed mb-4">
+                    Belirtilerinizi yazın, yapay zeka size olası nedenler ve sonraki adımlar hakkında yol göstersin.
+                </p>
+
+                <div className="relative w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/15 border border-white/25 group-hover:bg-white/25 transition-all">
+                    <Sparkles size={14} className="text-fuchsia-300" />
+                    Triyaj Bot&apos;u Aç
+                </div>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed mb-4">
-                Klinik vakalarınızı yapay zeka ile analiz edin, ayırıcı tanı ve tedavi önerileri alın.
-            </p>
-            <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all">
-                <Sparkles size={14} />
-                Konsültasyon Başlat
-            </button>
-        </div>
+        </Link>
     );
 }
+
 
 function Leaderboard() {
     return (
@@ -451,17 +407,29 @@ export default function FeedPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/80 to-sky-100/50">
+        <div 
+            className="min-h-screen flex flex-col relative overflow-hidden"
+            style={{
+                background: "linear-gradient(135deg, #ede9fe 0%, #f5f3ff 20%, #faf5ff 40%, #ecfeff 70%, #f0fdfa 100%)",
+            }}
+        >
+            {/* Animated mesh blobs — soft pastel, low opacity */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-violet-300/20 blur-3xl animate-pulse" style={{ animationDuration: "6s" }} />
+                <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-fuchsia-200/15 blur-3xl animate-pulse" style={{ animationDuration: "5s" }} />
+            </div>
+
             <FeedNavbar />
             <SidePanel />
 
             {/* Main content area — offset by sidebar width on lg */}
-            <div className="lg:ml-64">
-                <div className="max-w-6xl mx-auto p-4 md:p-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-9 gap-6">
+            <div className="lg:ml-64 relative z-10 flex-1">
+                <div className="max-w-[1550px] mx-auto p-4 md:p-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
 
                         {/* ── Middle Column: The Feed ── */}
-                        <main className="lg:col-span-5 space-y-5">
+                        <main className="lg:col-span-6 space-y-5">
                             <CreatePostBlock />
                             {MOCK_POSTS.map((post) => (
                                 <PostCard key={post.id} post={post} />
