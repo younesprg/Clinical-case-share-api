@@ -74,7 +74,7 @@ export default function CasesFeed() {
         const fetchData = async () => {
             try {
                 const [casesRes, patientsRes] = await Promise.all([api.get('/cases/'), api.get('/patients/')]);
-                setCases(casesRes.data);
+                setCases(Array.isArray(casesRes.data) ? casesRes.data : (casesRes.data.items || []));
                 const pMap: Record<number, string> = {};
                 patientsRes.data.forEach((p: any) => { pMap[p.id] = p.full_name; });
                 setPatientsMap(pMap);

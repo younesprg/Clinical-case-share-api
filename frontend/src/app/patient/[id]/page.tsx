@@ -27,7 +27,9 @@ export default function PatientDashboard() {
         const fetchPatientData = async () => {
             try {
                 const response = await api.get('/cases/');
-                const filteredCases = response.data.filter((c: any) => c.patient_id.toString() === patientId);
+                const data = response.data;
+                const casesArray = Array.isArray(data) ? data : (data.items || []);
+                const filteredCases = casesArray.filter((c: any) => c.patient_id.toString() === patientId);
                 // Sort cases by date descending
                 filteredCases.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
                 setPatientCases(filteredCases);

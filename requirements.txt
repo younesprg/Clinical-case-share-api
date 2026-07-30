@@ -3,23 +3,16 @@ uvicorn
 sqlalchemy
 psycopg2-binary
 pydantic
-python-dotenvfastapi
-uvicorn
-sqlalchemy
-psycopg2-binary
-pydantic
+pydantic[email]
 email-validator
 python-dotenv
 bcrypt
 passlib
 google-genai
 python-multipart
-python-jose
+python-jose[cryptography]
 cryptography
 httpx
 alembic
-bcrypt
-google-genai
-python-multipart
-python-jose[cryptography]
-pydantic[email]
+# Redis async client
+redis[asyncio]

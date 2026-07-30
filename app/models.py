@@ -89,6 +89,7 @@ class User(Base):
     post_comments   = relationship("PostComment", back_populates="author", cascade="all, delete-orphan")
     post_likes      = relationship("PostLike", back_populates="user", cascade="all, delete-orphan")
     bookmarks       = relationship("PostBookmark", back_populates="user", cascade="all, delete-orphan")
+    agreements      = relationship("PostAgreement", back_populates="user", cascade="all, delete-orphan")
 
     # Triage
     triage_sessions = relationship("TriageSession", back_populates="user", cascade="all, delete-orphan")
@@ -194,6 +195,8 @@ class Post(Base):
     tags            = Column(String, nullable=True)   # comma-separated: '#NadirVaka,#COVID19'
     status          = Column(String, default='tartışılıyor', nullable=False)
     likes_count     = Column(Integer, default=0, nullable=False)
+    agree_count     = Column(Integer, default=0, nullable=False)
+    disagree_count  = Column(Integer, default=0, nullable=False)
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # ── Relationships ──────────────────────────────────────────
@@ -206,6 +209,7 @@ class Post(Base):
     )
     likes           = relationship("PostLike", back_populates="post", cascade="all, delete-orphan")
     bookmarks       = relationship("PostBookmark", back_populates="post", cascade="all, delete-orphan")
+    agreements      = relationship("PostAgreement", back_populates="post", cascade="all, delete-orphan")
 
 
 class PostComment(Base):
@@ -275,6 +279,23 @@ class PostBookmark(Base):
 
     post    = relationship("Post", back_populates="bookmarks")
     user    = relationship("User", back_populates="bookmarks")
+
+
+class PostAgreement(Base):
+    """Tracks agree/disagree votes on a Post. One vote per user per post."""
+    __tablename__ = 'post_agreements'
+    __table_args__ = (
+        UniqueConstraint('post_id', 'user_id', name='uq_agreement_post_user'),
+    )
+
+    id         = Column(Integer, primary_key=True, index=True)
+    post_id    = Column(Integer, ForeignKey('posts.id', ondelete="CASCADE"), nullable=False)
+    user_id    = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    vote_type  = Column(String, nullable=False)   # 'agree' | 'disagree'
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    post = relationship("Post", back_populates="agreements")
+    user = relationship("User", back_populates="agreements")
 
 
 # ══════════════════════════════════════════════════════════════

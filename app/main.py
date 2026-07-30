@@ -1,10 +1,12 @@
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.db import engine, get_db
+from app.cache import get_redis, close_redis
 import app.models as models
 import app.schemas as schemas
 import app.auth as auth
@@ -18,28 +20,21 @@ from app.routers import feed as feed_router
 # Triage Bot Router
 from app.routers import triage as triage_router
 
-# Veritabanı tablolarını oluştur
-models.Base.metadata.create_all(bind=engine)
+# ── Uygulama yaşam döngüsü (startup / shutdown) ──────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Redis bağlantısını ısıt
+    await get_redis()
+    yield
+    # Shutdown: Redis bağlantısını kapat
+    await close_redis()
 
-from sqlalchemy import text
-with engine.connect() as con:
-    try:
-        
-        con.execute(text("ALTER TABLE cases DROP CONSTRAINT IF EXISTS cases_patient_id_fkey;"))
-        con.execute(text("ALTER TABLE cases ADD CONSTRAINT cases_patient_id_fkey FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;"))
-        
-        # Social Feed eklentileri için User tablosuna yeni sütunları ekle
-        con.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS medical_role VARCHAR DEFAULT 'medical_student';"))
-        con.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;"))
-        
-        con.commit()
-    except Exception as e:
-        print("Schema FK Migration skipped/failed:", e)
 
 app = FastAPI(
     title="Case-Share AI & Auth API",
     description="Role-Based (Doktor/Hasta) Klinik Vaka ve AI Platformu",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
 
@@ -260,17 +255,27 @@ def delete_case(
     db.delete(case)
     db.commit()
 
-@app.get("/cases/", response_model=List[schemas.CasePostResponse])
-def get_cases(db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+@app.get("/cases/", response_model=schemas.PaginatedCaseResponse)
+def get_cases(
+    skip: int = Query(0, ge=0, description="Kaç kayıt atlanacak"),
+    limit: int = Query(20, ge=1, le=100, description="Sayfa başına kayıt sayısı (maks 100)"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
     """
-    Vakaları listeler. 
-    Doktor giriş yaptıysa sistemdeki TÜM vakaları görür.
-    Hasta giriş yaptıysa SADECE kendi vakalarını görür.
+    Vakaları sayfalanmış olarak listeler.
+    Doktor → sistemdeki TÜM vakaları görür.
+    Hasta  → SADECE kendi vakalarını görür.
     """
-    if current_user.role == models.UserRole.DOCTOR:
-        return db.query(models.CasePost).all()
-    else:
-        return db.query(models.CasePost).filter(models.CasePost.patient_id == current_user.id).all()
+    query = db.query(models.CasePost)
+    if current_user.role != models.UserRole.DOCTOR:
+        query = query.filter(models.CasePost.patient_id == current_user.id)
+
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+
+    return schemas.PaginatedCaseResponse(total=total, skip=skip, limit=limit, items=items)
+
 
 @app.get("/cases/{case_id}/ai-analysis", response_model=schemas.AIAnalysisResponse)
 def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
@@ -315,8 +320,7 @@ def get_case_ai_analysis(case_id: int, db: Session = Depends(get_db), current_us
 # ============================================================
 # AI Medical Encyclopedia Endpoint
 # ============================================================
-import time
-ENCYCLOPEDIA_CACHE = {}
+ENCYCLOPEDIA_CACHE_TTL = 43200  # 12 saat (saniye cinsinden)
 
 @app.get("/api/encyclopedia/cases")
 async def encyclopedia_cases(
@@ -325,21 +329,21 @@ async def encyclopedia_cases(
 ):
     """
     Europe PMC'den klinik vaka raporlarını çeker, Gemini ile Türkçe özetler.
+    Sonuçlar Redis'te 12 saat boyunca önbelleğe alınır.
     Param: query — hastalık adı veya semptom (örn. 'pneumonia', 'chest pain')
     """
-    global ENCYCLOPEDIA_CACHE
     if not query or len(query.strip()) < 2:
         raise HTTPException(status_code=400, detail="Lütfen geçerli bir arama terimi girin.")
-    
+
     query = query.strip()
-    cache_key = query.lower()
-    
-    # Check cache (expire after 12 hours = 43200 seconds)
-    if cache_key in ENCYCLOPEDIA_CACHE:
-        cached_time, cached_data = ENCYCLOPEDIA_CACHE[cache_key]
-        if time.time() - cached_time < 43200:
-            return {"query": query, "results": cached_data, "cached": True}
-    
+    cache_key = f"encyclopedia:{query.lower()}"
+
+    # Redis'ten önbelleğe bakıyoruz
+    redis = await get_redis()
+    cached = await redis.get(cache_key)
+    if cached:
+        return {"query": query, "results": json.loads(cached), "cached": True}
+
     try:
         summaries = await ai_engine.generate_encyclopedia_summary(query)
     except Exception as e:
@@ -349,5 +353,6 @@ async def encyclopedia_cases(
     if not summaries:
         return {"query": query, "results": [], "message": "Bu arama için yeterli klinik vaka bulunamadı."}
 
-    ENCYCLOPEDIA_CACHE[cache_key] = (time.time(), summaries)
+    # Sonuçları Redis'e 12 saatlik TTL ile kaydet
+    await redis.set(cache_key, json.dumps(summaries, ensure_ascii=False), ex=ENCYCLOPEDIA_CACHE_TTL)
     return {"query": query, "results": summaries}

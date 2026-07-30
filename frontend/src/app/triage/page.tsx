@@ -8,9 +8,10 @@ import api from "@/lib/api";
 import {
     HeartPulse, Send, Zap, Stethoscope, Pill, FlaskConical,
     Brain, AlertTriangle, X, ChevronDown, LogOut, Loader2,
-    MessageCircle, Shield, SquarePen
+    MessageCircle, Shield, SquarePen, Plus
 } from "lucide-react";
 import TopNavbar from "@/components/TopNavbar";
+import SidePanel from "@/components/SidePanel";
 
 // ─────────────────────────────────────────────────────
 // Types
@@ -258,6 +259,53 @@ export default function TriagePage() {
     const hasMessages = messages.length > 0;
     const firstName = user?.name?.split(" ")[0] ?? "Kullanıcı";
 
+    const renderInputBox = () => (
+        <div className="relative bg-white border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden p-0 flex flex-col transition-all focus-within:shadow-2xl focus-within:border-violet-300">
+            {/* Top Gradient Strip */}
+            <div className="h-2 w-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-400" />
+            
+            <div className="p-4 pb-3 flex flex-col gap-3">
+                <textarea
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                    placeholder="Belirtilerinizi veya sorunuzu yazın..."
+                    rows={3}
+                    className="w-full bg-transparent text-slate-800 placeholder-slate-400 text-base resize-none outline-none leading-relaxed max-h-40 overflow-y-auto px-1 pt-1"
+                />
+                
+                <div className="flex items-center justify-between mt-2">
+                    {/* Left Actions (Attachments / Modes) */}
+                    <div className="flex items-center gap-2">
+                        <button 
+                            className="w-9 h-9 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+                            title="Dosya Ekle"
+                        >
+                            <Plus size={18} />
+                        </button>
+                        <button 
+                            className="px-4 h-9 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center gap-2 text-slate-600 text-[13px] font-semibold transition-colors"
+                        >
+                            <Brain size={14} className="text-violet-500" />
+                            Klinik Analiz
+                        </button>
+                    </div>
+                    
+                    {/* Right Actions (Send) */}
+                    <button
+                        onClick={() => handleSend()}
+                        disabled={!input.trim() || isSending}
+                        className="flex items-center gap-2 px-6 h-9 rounded-full text-[13px] font-bold text-white transition-all
+                            bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed
+                            shadow-sm"
+                    >
+                        {isSending ? <Loader2 size={15} className="animate-spin" /> : "Gönder"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <>
             {!accepted && <DisclaimerModal onAccept={handleAccept} />}
@@ -274,8 +322,8 @@ export default function TriagePage() {
                     <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-fuchsia-200/15 blur-3xl animate-pulse" style={{ animationDuration: "5s" }} />
                 </div>
-
-                {/* Shared Top Navbar */}
+                
+                {/* Shared Top Navbar (Full Width) */}
                 <TopNavbar
                     rightExtra={
                         hasMessages ? (
@@ -290,129 +338,104 @@ export default function TriagePage() {
                     }
                 />
 
-                <div className="flex-1 flex overflow-hidden relative z-10 w-full max-w-screen-2xl mx-auto">
-                    {/* Left Sidebar for History */}
-                    <div className="hidden md:flex w-72 flex-col border-r border-slate-200/50 bg-white/40 backdrop-blur-md">
-                        <div className="p-5 border-b border-slate-200/50 flex items-center gap-2 text-slate-800">
-                            <MessageCircle size={18} className="text-violet-500" />
-                            <h3 className="font-bold text-sm">Önceki Sohbetler</h3>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                            {sessions.length === 0 ? (
-                                <div className="text-xs text-slate-500 text-center mt-4">Henüz sohbet geçmişi yok</div>
+                {/* Sidebar Navigation */}
+                <SidePanel />
+
+                {/* Main Content Area (Offset by sidebar width on large screens) */}
+                <div className="flex-1 flex flex-col lg:pl-64 relative z-10 h-[calc(100vh-4rem)]">
+                    <div className="flex-1 flex flex-col w-full h-full relative">
+
+                        {/* Scrollable Content Area */}
+                        <div className={`flex-1 overflow-y-auto w-full custom-scrollbar ${hasMessages ? 'pb-32' : ''}`}>
+                            {!hasMessages ? (
+                                <div className="flex flex-col items-center justify-center min-h-full py-10 w-full px-4">
+                                    <AIOrb isTyping={false} />
+                                    <div className="text-center mt-6 mb-6">
+                                        <p className="text-slate-500 text-sm mb-1">Merhaba, {firstName} 👋</p>
+                                        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                                            Sağlığınız hakkında<br />
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-cyan-500">
+                                                ne öğrenmek istersiniz?
+                                            </span>
+                                        </h1>
+                                    </div>
+
+                                    {/* Quick Suggestion Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-3xl mb-8">
+                                        {QUICK_SUGGESTIONS.map((s) => (
+                                            <button
+                                                key={s.label}
+                                                onClick={() => handleSend(s.prompt)}
+                                                className="group text-left p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-slate-200/60 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:bg-white hover:shadow-md hover:border-violet-200 transition-all duration-300 hover:-translate-y-0.5"
+                                            >
+                                                <s.icon size={18} className="text-violet-500 mb-2 group-hover:text-cyan-500 transition-colors" />
+                                                <p className="text-slate-700 text-sm font-medium leading-snug">{s.label}</p>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Input Box for Welcome Screen */}
+                                    <div className="w-full max-w-5xl">
+                                        {renderInputBox()}
+                                    </div>
+
+                                    {/* Vertical Recent Chats List */}
+                                    {sessions.length > 0 && (
+                                        <div className="w-full max-w-5xl mt-12 flex flex-col gap-1 text-left">
+                                            <div className="text-sm font-semibold text-slate-500 mb-3 px-2">
+                                                Önceki sohbetler
+                                            </div>
+                                            {sessions.map(s => {
+                                                const dateStr = new Date(s.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+                                                return (
+                                                    <button
+                                                        key={s.session_id}
+                                                        onClick={() => loadSession(s.session_id)}
+                                                        className="flex justify-between items-center px-4 py-3.5 hover:bg-white/40 rounded-2xl transition-all border border-transparent hover:border-slate-200/50 w-full text-left group"
+                                                    >
+                                                        <span className="text-sm text-slate-700 font-medium truncate pr-4 group-hover:text-violet-700 transition-colors">{s.preview_text}</span>
+                                                        <span className="text-xs text-slate-400 whitespace-nowrap">{dateStr}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
-                                sessions.map((s) => (
-                                    <button
-                                        key={s.session_id}
-                                        onClick={() => loadSession(s.session_id)}
-                                        className={`w-full text-left p-3 rounded-xl text-sm transition-all ${
-                                            sessionId === s.session_id 
-                                                ? 'bg-violet-100/80 border border-violet-200 shadow-sm'
-                                                : 'bg-white/50 border border-transparent hover:bg-white/80 hover:border-slate-200/60'
-                                        }`}
-                                    >
-                                        <p className="font-semibold text-slate-800 truncate">{s.preview_text}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">
-                                            {new Date(s.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
+                                <div className="w-full max-w-4xl mx-auto px-4 py-8 space-y-6">
+                                    <div className="flex justify-center mb-6">
+                                        <AIOrb isTyping={isSending} />
+                                    </div>
 
-                    {/* Main Content */}
-                    <div className="flex-1 flex flex-col items-center justify-between px-4 py-8 max-w-3xl mx-auto w-full h-full overflow-y-auto">
-
-                        {/* Welcome / Orb Section */}
-                        {!hasMessages && (
-                            <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center pb-8 w-full mt-10">
-                                <AIOrb isTyping={false} />
-
-                                <div>
-                                    <p className="text-slate-500 text-sm mb-1">Merhaba, {firstName} 👋</p>
-                                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                                        Sağlığınız hakkında<br />
-                                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-cyan-500">
-                                            ne öğrenmek istersiniz?
-                                        </span>
-                                    </h1>
-                                </div>
-
-                                {/* Quick Suggestion Cards */}
-                                <div className="grid grid-cols-2 gap-3 w-full max-w-xl">
-                                    {QUICK_SUGGESTIONS.map((s) => (
-                                        <button
-                                            key={s.label}
-                                            onClick={() => handleSend(s.prompt)}
-                                            className="group text-left p-4 rounded-2xl bg-white/70 backdrop-blur-sm border border-slate-200/60 shadow-sm hover:bg-white hover:shadow-md hover:border-violet-200 transition-all duration-200 hover:-translate-y-0.5"
-                                        >
-                                            <s.icon size={18} className="text-violet-500 mb-2 group-hover:text-cyan-500 transition-colors" />
-                                            <p className="text-slate-700 text-sm font-medium leading-snug">{s.label}</p>
-                                        </button>
+                                    {messages.map((msg, i) => (
+                                        <ChatBubble key={i} msg={msg} userName={firstName} />
                                     ))}
-                                </div>
-                            </div>
-                        )}
 
-                        {/* Chat Messages */}
-                        {hasMessages && (
-                            <div className="flex-1 w-full overflow-y-auto space-y-5 pb-4 pr-1" style={{ maxHeight: "calc(100vh - 280px)" }}>
-                                {/* Orb mini version */}
-                                <div className="flex justify-center mb-4">
-                                    <AIOrb isTyping={isSending} />
-                                </div>
-
-                                {messages.map((msg, i) => (
-                                    <ChatBubble key={i} msg={msg} userName={firstName} />
-                                ))}
-
-                                {/* Typing indicator */}
-                                {isSending && (
-                                    <div className="flex gap-3">
-                                        <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-400 flex items-center justify-center text-white text-xs font-bold">AI</div>
-                                        <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-sm">
-                                            <div className="flex gap-1.5">
-                                                {[0, 1, 2].map(i => (
-                                                    <div key={i} className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-                                                ))}
+                                    {isSending && (
+                                        <div className="flex gap-3">
+                                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-400 flex items-center justify-center text-white text-xs font-bold shadow-sm">AI</div>
+                                            <div className="px-5 py-4 rounded-2xl rounded-tl-sm bg-white/80 backdrop-blur-sm border border-slate-200/60 shadow-sm">
+                                                <div className="flex gap-1.5 items-center h-full">
+                                                    {[0, 1, 2].map(i => (
+                                                        <div key={i} className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                )}
-                                <div ref={chatEndRef} />
+                                    )}
+                                    <div ref={chatEndRef} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom Fixed Area: Input Box (Only for active chat) */}
+                        {hasMessages && (
+                            <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-white/80 via-white/50 to-transparent pt-10 pb-6 px-4 backdrop-blur-[2px]">
+                                <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+                                    {renderInputBox()}
+                                </div>
                             </div>
                         )}
-
-                        {/* Input Box */}
-                        <div className="w-full mt-auto pt-4">
-                            <div className="relative bg-white/80 backdrop-blur-xl border border-slate-200/70 rounded-3xl shadow-[0_8px_30px_rgba(109,40,217,0.1)] p-4 flex flex-col gap-3">
-                                <textarea
-                                    value={input}
-                                    onChange={e => setInput(e.target.value)}
-                                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                                placeholder="Belirtilerinizi veya sorunuzu yazın..."
-                                rows={2}
-                                className="w-full bg-transparent text-slate-800 placeholder-slate-400 text-sm resize-none outline-none leading-relaxed"
-                            />
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5 text-slate-400 text-xs">
-                                    <Shield size={12} />
-                                    <span>Bu bir yapay zekadır · Kesin tanı koymaz</span>
-                                </div>
-                                <button
-                                    onClick={() => handleSend()}
-                                    disabled={!input.trim() || isSending}
-                                    className="flex items-center gap-2 px-5 py-2 rounded-2xl text-sm font-semibold text-white transition-all
-                                        bg-gradient-to-r from-violet-600 to-cyan-500 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed
-                                        shadow-md shadow-violet-300/40 active:scale-95"
-                                >
-                                    {isSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                                    Gönder
-                                </button>
-                            </div>
-                        </div>
-                        </div>
                     </div>
                 </div>
             </div>

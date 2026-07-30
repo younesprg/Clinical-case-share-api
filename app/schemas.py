@@ -142,6 +142,14 @@ class CasePostResponse(CasePostBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PaginatedCaseResponse(BaseModel):
+    """Pagination wrapper for /cases/ endpoint."""
+    total: int
+    skip: int
+    limit: int
+    items: List[CasePostResponse]
+
+
 # ══════════════════════════════════════════════════════════════
 # ██████  SOCIAL FEED MODULE — NEW SCHEMAS  ██████
 # ══════════════════════════════════════════════════════════════
@@ -187,6 +195,22 @@ class PostBookmarkResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+# ── Post Agreement ────────────────────────────────────────
+
+class PostAgreementCreate(BaseModel):
+    vote_type: str
+    """Allowed values: 'agree' | 'disagree'"""
+
+
+class PostAgreementResponse(BaseModel):
+    id: int
+    post_id: int
+    user_id: int
+    vote_type: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 # ── Post ──────────────────────────────────────────────────────
 
 class PostBase(BaseModel):
@@ -220,6 +244,8 @@ class PostResponse(PostBase):
     author_id: int
     linked_case_id: Optional[int] = None
     likes_count: int = 0
+    agree_count: int = 0
+    disagree_count: int = 0
     created_at: datetime
     author: Optional[UserResponse] = None
     comments: List[PostCommentResponse] = []

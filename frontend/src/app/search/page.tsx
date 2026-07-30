@@ -34,7 +34,8 @@ export default function SearchResultsPage() {
 
                 // 2. Fetch all cases
                 const casesResponse = await api.get('/cases/');
-                const allCases = casesResponse.data;
+                const casesData = casesResponse.data;
+                const allCases = Array.isArray(casesData) ? casesData : (casesData.items || []);
 
                 // 3. We also need AI logic. In a real app, AI analysis is saved in DB or fetched on demand.
                 // Since our current backend computes AI on the fly per case via `GET /cases/{id}/ai-analysis`,

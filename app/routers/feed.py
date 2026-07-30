@@ -371,3 +371,120 @@ def delete_comment(
         raise HTTPException(status_code=403, detail="Bu yorumu silme yetkiniz yok.")
     db.delete(comment)
     db.commit()
+
+
+# ══════════════════════════════════════════════════════════════
+# AGREEMENTS (Katılıyorum / Katılmıyorum)
+# ══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/posts/{post_id}/agree",
+    response_model=schemas.PostAgreementResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Oy ver (katılıyorum / katılmıyorum)",
+)
+def vote_post(
+    post_id: int,
+    vote: schemas.PostAgreementCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """
+    Bir paylaşıma 'agree' (Katılıyorum) veya 'disagree' (Katılmıyorum) oyu verir.
+    - Kullanıcı başına 1 oy hakkı vardır.
+    - Farklı bir oy tipi göndererek mevcut oyu değiştirebilirsiniz.
+    """
+    if vote.vote_type not in ("agree", "disagree"):
+        raise HTTPException(
+            status_code=400,
+            detail="vote_type yalnızca 'agree' veya 'disagree' olabilir."
+        )
+
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Paylaşım bulunamadı.")
+
+    # Mevcut oy var mı?
+    existing = db.query(models.PostAgreement).filter(
+        models.PostAgreement.post_id == post_id,
+        models.PostAgreement.user_id == current_user.id,
+    ).first()
+
+    if existing:
+        if existing.vote_type == vote.vote_type:
+            raise HTTPException(status_code=409, detail="Bu oyu zaten verdiniz.")
+        # Oy tipini değiştir — sayaçları güncelle
+        if existing.vote_type == "agree":
+            post.agree_count = max(0, post.agree_count - 1)
+            post.disagree_count += 1
+        else:
+            post.disagree_count = max(0, post.disagree_count - 1)
+            post.agree_count += 1
+        existing.vote_type = vote.vote_type
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    # Yeni oy oluştur
+    new_vote = models.PostAgreement(
+        post_id=post_id,
+        user_id=current_user.id,
+        vote_type=vote.vote_type,
+    )
+    db.add(new_vote)
+    if vote.vote_type == "agree":
+        post.agree_count += 1
+    else:
+        post.disagree_count += 1
+    db.commit()
+    db.refresh(new_vote)
+    return new_vote
+
+
+@router.delete(
+    "/posts/{post_id}/agree",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Oyu geri al",
+)
+def remove_vote(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Kullanıcının bu paylaşıma verdiği oyu geri alır."""
+    vote = db.query(models.PostAgreement).filter(
+        models.PostAgreement.post_id == post_id,
+        models.PostAgreement.user_id == current_user.id,
+    ).first()
+    if not vote:
+        raise HTTPException(status_code=404, detail="Bu paylaşıma oy vermediniz.")
+
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post:
+        if vote.vote_type == "agree":
+            post.agree_count = max(0, post.agree_count - 1)
+        else:
+            post.disagree_count = max(0, post.disagree_count - 1)
+
+    db.delete(vote)
+    db.commit()
+
+
+@router.get(
+    "/posts/{post_id}/agreements",
+    response_model=List[schemas.PostAgreementResponse],
+    summary="Paylaşımın oylarını listele",
+)
+def get_agreements(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Bir paylaşıma verilen tüm agree/disagree oylarını listeler."""
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Paylaşım bulunamadı.")
+    return db.query(models.PostAgreement).filter(
+        models.PostAgreement.post_id == post_id
+    ).all()
+
