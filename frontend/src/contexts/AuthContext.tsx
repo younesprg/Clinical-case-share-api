@@ -36,9 +36,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     const res = await api.get('/users/me');
                     setUser(res.data);
 
-                    // Redirect to /dashboard only if on the login screen while already logged in
+                    // Redirect to /feed only if on the login screen while already logged in
                     if (pathname === '/login') {
-                        router.push('/dashboard');
+                        router.push('/feed');
                     }
                 } catch (err) {
                     localStorage.removeItem('token');
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.setItem('token', token);
         const res = await api.get('/users/me');
         setUser(res.data);
-        router.push('/dashboard');
+        router.push('/feed');
     };
 
     const logout = () => {

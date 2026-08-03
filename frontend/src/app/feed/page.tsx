@@ -8,9 +8,29 @@ import api from '@/lib/api';
 import {
     HeartPulse, LogOut, Heart, MessageCircle, Bookmark, Image as ImageIcon,
     LinkIcon, Send, BadgeCheck, Globe, FolderOpen, BookmarkCheck, Settings,
-    Zap, Bot, Trophy, Newspaper, Loader2, ChevronDown, Sparkles
+    Trophy, Newspaper, Loader2, ChevronDown, Plus
 } from 'lucide-react';
 import SidePanel from '@/components/SidePanel';
+
+// ═══════════════════════════════════════════════════
+// UNIFIED POST TYPE (covers mock + API responses)
+// ═══════════════════════════════════════════════════
+
+interface UnifiedPost {
+    id: number;
+    author: string;
+    specialty: string;
+    verified: boolean;
+    avatar: string;
+    content: string;
+    category: string;
+    tags: string[];
+    imageUrl?: string;
+    likes: number;
+    comments: number;
+    time: string;
+    isReal?: boolean; // true = came from API
+}
 
 // ═══════════════════════════════════════════════════
 // SHARED STYLES
@@ -23,7 +43,7 @@ const GLASS_COMPACT = "bg-white/40 backdrop-blur-2xl border-[1.5px] border-slate
 // MOCK DATA
 // ═══════════════════════════════════════════════════
 
-const MOCK_POSTS = [
+const MOCK_POSTS: UnifiedPost[] = [
     {
         id: 1,
         author: "Dr. Ayşe Kara",
@@ -53,10 +73,47 @@ const MOCK_POSTS = [
     },
 ];
 
+// ── Helper: format API post date relative ──────────
+function timeAgo(dateStr: string): string {
+    const now = new Date();
+    const past = new Date(dateStr);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Az önce';
+    if (diffMins < 60) return `${diffMins} dakika önce`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} saat önce`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} gün önce`;
+}
+
+// ── Helper: map API PostResponse → UnifiedPost ─────
+function mapApiPost(p: any): UnifiedPost {
+    const authorName = p.author?.name || 'Bilinmeyen Kullanıcı';
+    const specialty = p.author?.specialty || p.author?.medical_role || 'Tıp Uzmanı';
+    return {
+        id: p.id,
+        author: authorName,
+        specialty,
+        verified: p.author?.is_verified ?? false,
+        avatar: authorName.replace('Dr. ', ''),
+        content: p.content,
+        category: p.category || 'Genel',
+        tags: p.tags ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+        imageUrl: p.image_url ?? undefined,
+        likes: p.likes_count ?? 0,
+        comments: p.comments?.length ?? 0,
+        time: timeAgo(p.created_at),
+        isReal: true,
+    };
+}
+
 const MOCK_LEADERBOARD = [
-    { rank: "🥇", name: "Dr. Ayşe Kara", likes: 48 },
-    { rank: "🥈", name: "Dr. Mehmet Demir", likes: 35 },
-    { rank: "🥉", name: "Dr. Zeynep Aksoy", likes: 27 },
+    { rank: "🥇", name: "Dr. Ayşe Kara", specialty: "Nörolog", likes: 48 },
+    { rank: "🥈", name: "Dr. Mehmet Demir", specialty: "Kardiyolog", likes: 35 },
+    { rank: "🥉", name: "Dr. Zeynep Aksoy", specialty: "Pediatrist", likes: 27 },
+    { rank: "4️⃣", name: "Dr. Ali Şahin", specialty: "Dahiliye", likes: 21 },
+    { rank: "5️⃣", name: "Dr. Fatma Yıldız", specialty: "Romatoloji", likes: 17 },
 ];
 
 // ═══════════════════════════════════════════════════
@@ -68,14 +125,14 @@ function FeedNavbar() {
     const [showDropdown, setShowDropdown] = useState(false);
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
-            <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        <nav className="fixed top-0 left-0 right-0 z-50 w-full bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-sm">
+            <div className="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between">
                 {/* Left: Logo */}
-                <Link href="/dashboard" className="flex items-center gap-2 font-bold text-slate-800 hover:text-blue-600 transition-colors">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <HeartPulse size={18} className="text-white" strokeWidth={2.5} />
+                <Link href="/feed" className="flex items-center gap-2.5 font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <HeartPulse size={22} className="text-white" strokeWidth={2.5} />
                     </div>
-                    <span className="text-base tracking-tight">Med<span className="text-blue-600">+</span></span>
+                    <span className="text-2xl tracking-tight">Med<span className="text-blue-600">+</span></span>
                 </Link>
 
                 {/* Center: Title */}
@@ -84,8 +141,16 @@ function FeedNavbar() {
                     Sosyal Akış
                 </div>
 
-                {/* Right: Avatar + Logout */}
-                <div className="relative">
+                {/* Right: Actions + Avatar */}
+                <div className="flex items-center gap-3">
+                    <Link href="/feed/create" className="hidden sm:flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] transition-all">
+                        <Send size={16} strokeWidth={2.5} />
+                        Paylaş
+                    </Link>
+                    
+                    <div className="w-px h-5 bg-slate-200 hidden sm:block"></div>
+
+                    <div className="relative">
                     <button
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="flex items-center gap-2.5 hover:bg-slate-50/80 px-2 py-1.5 rounded-xl transition-colors"
@@ -119,6 +184,7 @@ function FeedNavbar() {
                             </button>
                         </div>
                     )}
+                    </div>
                 </div>
             </div>
         </nav>
@@ -168,12 +234,28 @@ function CreatePostBlock() {
     );
 }
 
-function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
+function PostCard({ post }: { post: UnifiedPost }) {
     const [liked, setLiked] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    // Parse content: first paragraph (up to first \n\n) is the title if it's short
+    // Strip any stray HTML tags or markdown artifacts from API content
+    const cleanContent = post.content
+        .replace(/<\/?(p|div|br|span|h[1-6])[^>]*>/gi, '\n') // block-level tags → newline
+        .replace(/<[^>]*>/g, '')                               // strip remaining tags
+        .replace(/\*\*(.*?)\*\*/g, '$1')                      // strip **bold** markdown
+        .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/\n{3,}/g, '\n\n')                           // collapse excess newlines
+        .trim();
+
+    const paragraphs = cleanContent.split('\n\n').map(p => p.trim()).filter(Boolean);
+    const hasTitle = paragraphs.length > 1 && paragraphs[0].length <= 120;
+    const title = hasTitle ? paragraphs[0] : null;
+    const bodyParagraphs = hasTitle ? paragraphs.slice(1) : paragraphs;
 
     return (
-        <div className={`${GLASS} !p-8 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300`}>
+        <div className={`${GLASS} !p-8 hover:shadow-[0_8px_40px_rgba(0,0,0,0.08)] transition-all duration-300 ${post.isReal ? 'ring-1 ring-blue-200/50' : ''}`}>
             {/* Author header */}
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -186,6 +268,7 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
                         <div className="flex items-center gap-1.5">
                             <h4 className="font-semibold text-slate-900 text-sm">{post.author}</h4>
                             {post.verified && <BadgeCheck size={14} className="text-blue-500 fill-blue-100" />}
+                            {post.isReal && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white">YENİ</span>}
                         </div>
                         <p className="text-xs text-slate-400">{post.specialty} · {post.time}</p>
                     </div>
@@ -195,28 +278,43 @@ function PostCard({ post }: { post: typeof MOCK_POSTS[0] }) {
                 </span>
             </div>
 
-            {/* Content */}
-            <p className="text-sm text-slate-700 leading-relaxed mb-4">{post.content}</p>
+            {/* Title (if distinct from body) */}
+            {title && (
+                <h3 className="font-bold text-slate-900 text-base leading-snug mb-2">
+                    {title}
+                </h3>
+            )}
 
-            {/* Media (if exists) */}
-            {post.imageUrl && (
+            {/* Body paragraphs */}
+            <div className="space-y-2 mb-4">
+                {bodyParagraphs.map((para, i) => (
+                    <p key={i} className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{para}</p>
+                ))}
+            </div>
+
+            {/* Media (if exists and loads successfully) */}
+            {post.imageUrl && !imageError && (
                 <div className="mb-4 w-full">
-                    <img 
-                        src={post.imageUrl} 
-                        alt="Klinik Görsel" 
+                    <img
+                        src={post.imageUrl}
+                        alt="Klinik Görsel"
                         className="w-full max-h-[520px] object-cover rounded-2xl border border-slate-200/50 shadow-sm"
+                        onError={() => setImageError(true)}
+                        onLoad={() => setImageError(false)}
                     />
                 </div>
             )}
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-                {post.tags.map((tag) => (
-                    <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50/80 text-indigo-600 border border-indigo-100/50">
-                        {tag}
-                    </span>
-                ))}
-            </div>
+            {post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {post.tags.map((tag) => (
+                        <span key={tag} className="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50/80 text-indigo-600 border border-indigo-100/50">
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            )}
 
             {/* Actions bar */}
             <div className="flex items-center justify-between pt-3 border-t border-slate-200/40">
@@ -271,7 +369,7 @@ function EuropePMCRadar() {
                     params: { query: 'clinical case report 2024' }
                 });
                 if (res.data?.results && res.data.results.length > 0) {
-                    setArticles(res.data.results.slice(0, 3));
+                    setArticles(res.data.results.slice(0, 4));
                 }
             } catch (err) {
                 console.error('Europe PMC fetch failed:', err);
@@ -323,66 +421,29 @@ function EuropePMCRadar() {
     );
 }
 
-function MedAIAssistant() {
-    return (
-        <Link href="/triage" className="block group">
-            <div
-                className="relative overflow-hidden rounded-[1.5rem] p-5 border border-white/20 shadow-[0_8px_30px_rgba(124,58,237,0.25)] transition-all duration-300 group-hover:shadow-[0_12px_40px_rgba(124,58,237,0.4)] group-hover:-translate-y-0.5"
-                style={{ background: "linear-gradient(135deg, #2d1b69 0%, #6d28d9 40%, #0e7490 100%)" }}
-            >
-                {/* Mesh blobs */}
-                <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-purple-400/20 blur-xl" />
-                <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-cyan-400/20 blur-xl" />
 
-                <div className="relative flex items-center gap-3 mb-3">
-                    {/* Mini orb */}
-                    <div className="relative w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
-                        style={{
-                            background: "radial-gradient(circle at 35% 35%, #c084fc, #7c3aed, #06b6d4)",
-                            boxShadow: "0 0 20px rgba(168,85,247,0.6)"
-                        }}
-                    >
-                        <Zap size={16} className="text-white" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-white text-sm">Triyaj Asistanı</h3>
-                        <p className="text-purple-300 text-[11px]">Med+ AI · Hızlı Teşhis</p>
-                    </div>
-                </div>
 
-                <p className="relative text-xs text-white/70 leading-relaxed mb-4">
-                    Belirtilerinizi yazın, yapay zeka size olası nedenler ve sonraki adımlar hakkında yol göstersin.
-                </p>
-
-                <div className="relative w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/15 border border-white/25 group-hover:bg-white/25 transition-all">
-                    <Sparkles size={14} className="text-fuchsia-300" />
-                    Triyaj Bot&apos;u Aç
-                </div>
-            </div>
-        </Link>
-    );
-}
 
 
 function Leaderboard() {
     return (
-        <div className={`${GLASS} h-full flex flex-col`}>
+        <div className={GLASS_COMPACT}>
             <div className="flex items-center gap-2 mb-4">
                 <Trophy size={16} className="text-amber-500" />
                 <h3 className="font-bold text-slate-800 text-sm">Haftanın Hekimleri</h3>
             </div>
-            <div className="space-y-4 flex-1 mt-2">
+            <div className="space-y-3">
                 {MOCK_LEADERBOARD.map((doc, i) => (
-                    <div key={i} className="flex items-center gap-3 px-1 transition-colors">
-                        <span className="text-lg shrink-0">{doc.rank}</span>
+                    <div key={i} className="flex items-center gap-3 px-1 py-1 rounded-xl hover:bg-white/50 transition-colors">
+                        <span className="text-base shrink-0 w-6 text-center">{doc.rank}</span>
                         <img
                             src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name.replace('Dr. ', ''))}&background=c7d2fe&color=3730a3&bold=true&size=36`}
                             alt={doc.name}
-                            className="w-9 h-9 rounded-full border-2 border-white shadow-sm shrink-0"
+                            className="w-8 h-8 rounded-full border-2 border-white shadow-sm shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-slate-800 truncate">{doc.name}</p>
-                            <p className="text-[11px] text-slate-400">{doc.likes} beğeni</p>
+                            <p className="text-[11px] text-slate-400">{doc.specialty} · {doc.likes} beğeni</p>
                         </div>
                     </div>
                 ))}
@@ -391,12 +452,34 @@ function Leaderboard() {
     );
 }
 
+
 // ═══════════════════════════════════════════════════
 // MAIN FEED PAGE
 // ═══════════════════════════════════════════════════
 
 export default function FeedPage() {
     const { loading } = useAuth();
+    const [apiPosts, setApiPosts] = useState<UnifiedPost[]>([]);
+    const [feedLoading, setFeedLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                const res = await api.get('/feed/posts/', { params: { limit: 50 } });
+                if (Array.isArray(res.data)) {
+                    setApiPosts(res.data.map(mapApiPost));
+                }
+            } catch (err) {
+                console.error('Feed posts fetch failed:', err);
+            } finally {
+                setFeedLoading(false);
+            }
+        };
+        if (!loading) fetchPosts();
+    }, [loading]);
+
+    // Merge: real API posts first (newest at top), then mock posts
+    const allPosts: UnifiedPost[] = [...apiPosts, ...MOCK_POSTS];
 
     if (loading) {
         return (
@@ -419,36 +502,32 @@ export default function FeedPage() {
                 <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] rounded-full bg-cyan-300/20 blur-3xl animate-pulse" style={{ animationDuration: "8s" }} />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-fuchsia-200/15 blur-3xl animate-pulse" style={{ animationDuration: "5s" }} />
             </div>
-
             <FeedNavbar />
             <SidePanel />
 
             {/* Main content area — offset by sidebar width on lg */}
-            <div className="lg:ml-64 relative z-10 flex-1">
+            <div className="lg:ml-64 relative z-10 flex-1 pt-14">
                 <div className="max-w-[1550px] mx-auto p-4 md:p-8">
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
 
                         {/* ── Middle Column: The Feed ── */}
                         <main className="lg:col-span-6 space-y-5">
                             <CreatePostBlock />
-                            {MOCK_POSTS.map((post) => (
-                                <PostCard key={post.id} post={post} />
-                            ))}
+                            {feedLoading ? (
+                                <div className="flex items-center justify-center py-10">
+                                    <Loader2 className="animate-spin text-blue-400" size={28} />
+                                </div>
+                            ) : (
+                                allPosts.map((post) => (
+                                    <PostCard key={`${post.isReal ? 'api' : 'mock'}-${post.id}`} post={post} />
+                                ))
+                            )}
                         </main>
 
-                        {/* ── Right Column: Insights + Leaderboard ── */}
-                        <aside className="lg:col-span-4">
-                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 h-full">
-                                {/* Left sub-column: PMC + AI */}
-                                <div className="space-y-5">
-                                    <MedAIAssistant />
-                                    <EuropePMCRadar />
-                                </div>
-                                {/* Right sub-column: Leaderboard (full height) */}
-                                <div className="h-full">
-                                    <Leaderboard />
-                                </div>
-                            </div>
+                        {/* ── Right Column: Leaderboard + News (single vertical stack) ── */}
+                        <aside className="lg:col-span-4 space-y-5">
+                            <Leaderboard />
+                            <EuropePMCRadar />
                         </aside>
 
                     </div>

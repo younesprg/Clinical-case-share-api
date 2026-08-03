@@ -14,17 +14,17 @@ export default function TopNavbar({ rightExtra }: { rightExtra?: ReactNode }) {
 
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
-            <div className="max-w-screen-2xl mx-auto px-6 h-16 flex items-center justify-between gap-6">
+        <nav className="fixed top-0 left-0 right-0 z-50 w-full bg-white/40 backdrop-blur-xl border-b border-slate-200/50 shadow-[0_4px_30px_rgba(0,0,0,0.02)]">
+            <div className="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
 
                 {/* LEFT: Logo + Nav Links */}
                 <div className="flex items-center gap-8">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 font-bold text-slate-800 hover:text-blue-600 transition-colors">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <HeartPulse size={18} className="text-white" strokeWidth={2.5} />
+                    <Link href="/feed" className="flex items-center gap-2.5 font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <HeartPulse size={22} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-base tracking-tight">Med<span className="text-blue-600">+</span></span>
+                        <span className="text-2xl tracking-tight">Med<span className="text-blue-600">+</span></span>
                     </Link>
                 </div>
 

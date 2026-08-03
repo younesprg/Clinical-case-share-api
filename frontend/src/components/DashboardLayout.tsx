@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
 
     return (
-        <div 
+        <div
             className="min-h-screen flex flex-col relative overflow-hidden"
             style={{
                 background: "linear-gradient(135deg, #ede9fe 0%, #f5f3ff 20%, #faf5ff 40%, #ecfeff 70%, #f0fdfa 100%)",
@@ -32,8 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <TopNavbar />
             <SidePanel />
-            <main className="flex-1 w-full max-w-[1550px] mx-auto px-6 py-8 overflow-y-auto lg:ml-64 relative z-10">
-                {children}
+            <main className="flex-1 w-full lg:pl-64 relative z-10 pt-24 pb-8 overflow-y-auto">
+                <div className="max-w-7xl mx-auto px-6">
+                    {children}
+                </div>
             </main>
         </div>
     );

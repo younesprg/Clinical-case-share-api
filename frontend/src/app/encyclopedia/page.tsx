@@ -19,6 +19,30 @@ const SUGGESTED_QUERIES = [
     'appendicitis', 'sepsis', 'anemia', 'hypertension',
 ];
 
+// ─────────────────────────────────────────────────────
+// Animated Orb
+// ─────────────────────────────────────────────────────
+
+function EncyclopediaOrb() {
+    return (
+        <div className="relative flex items-center justify-center mb-8">
+            {/* Outer glow rings */}
+            <div className="absolute w-40 h-40 rounded-full bg-gradient-to-r from-indigo-600/20 to-cyan-500/20 blur-xl animate-pulse" style={{ animationDuration: "3s" }} />
+            <div className="absolute w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500/30 via-blue-500/20 to-cyan-400/30 blur-lg animate-pulse" style={{ animationDuration: "2s" }} />
+
+            {/* Core orb */}
+            <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 hover:scale-105"
+                style={{
+                    background: "radial-gradient(circle at 35% 35%, #818cf8, #6366f1, #4f46e5, #4338ca, #06b6d4)",
+                    boxShadow: "0 0 60px rgba(99, 102, 241, 0.5), 0 0 120px rgba(99, 102, 241, 0.3), inset 0 2px 4px rgba(255,255,255,0.2)",
+                }}
+            >
+                <BookOpen size={36} className="text-white drop-shadow-lg" />
+            </div>
+        </div>
+    );
+}
+
 export default function EncyclopediaPage() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<EncyclopediaCase[]>([]);
@@ -49,39 +73,42 @@ export default function EncyclopediaPage() {
 
     return (
         <DashboardLayout>
+            {/* Animated Book Orb */}
+            <EncyclopediaOrb />
+
             {/* Hero Header */}
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-full text-sm font-semibold mb-4 border border-indigo-100">
-                    <Sparkles size={14} />
+            <div className="text-center mb-12 mt-4">
+                <div className="inline-flex items-center gap-2 px-5 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-bold mb-5 border border-indigo-100 shadow-sm">
+                    <Sparkles size={16} />
                     RAG · Europe PMC · Med+ AI
                 </div>
-                <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+                <h1 className="text-5xl font-extrabold text-slate-900 tracking-tight mb-4">
                     Tıbbi Vaka <span className="text-indigo-600">Arşivi</span>
                 </h1>
-                <p className="text-slate-500 max-w-xl mx-auto text-base">
+                <p className="text-slate-500 max-w-2xl mx-auto text-lg leading-relaxed">
                     Gerçek klinik vaka raporlarını Yapay Zeka ile keşfedin. Hastalık adı veya semptom girin, anında Türkçe özetler alın.
                 </p>
             </div>
 
             {/* Search Bar */}
-            <div className="max-w-2xl mx-auto mb-8">
+            <div className="max-w-3xl mx-auto mb-10">
                 <div className="relative flex items-center bg-white border-2 border-slate-200 rounded-2xl shadow-sm focus-within:border-indigo-400 focus-within:shadow-md transition-all">
-                    <Search className="absolute left-5 text-slate-400" size={20} />
+                    <Search className="absolute left-6 text-slate-400" size={24} />
                     <input
                         ref={inputRef}
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                        className="w-full pl-14 pr-4 py-4 rounded-2xl bg-transparent text-slate-900 placeholder-slate-400 focus:outline-none text-base"
+                        className="w-full pl-16 pr-4 py-5 rounded-2xl bg-transparent text-slate-900 placeholder-slate-400 focus:outline-none text-lg font-medium"
                         placeholder="Hastalık veya semptom ara... (örn: pneumonia, chest pain)"
                     />
                     <button
                         onClick={() => handleSearch()}
                         disabled={isLoading || !query.trim()}
-                        className="mr-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-colors flex items-center gap-2 shrink-0"
+                        className="mr-3 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold text-base transition-colors flex items-center gap-2 shrink-0 shadow-sm"
                     >
-                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                        {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} strokeWidth={2.5} />}
                         {isLoading ? 'Aranıyor...' : 'Ara'}
                     </button>
                 </div>

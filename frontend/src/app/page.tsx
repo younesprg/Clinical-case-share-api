@@ -113,11 +113,11 @@ export default function LandingPage() {
             {/* Sticky Navbar */}
             <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 shadow-sm">
                 <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-white">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                            <HeartPulse size={18} className="text-white" strokeWidth={2.5} />
+                    <Link href="/" className="flex items-center gap-2.5 font-bold text-white">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <HeartPulse size={22} className="text-white" strokeWidth={2.5} />
                         </div>
-                        <span className="text-base tracking-tight">Med<span className="text-blue-500">+</span></span>
+                        <span className="text-2xl tracking-tight">Med<span className="text-blue-500">+</span></span>
                     </Link>
 
                     <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-slate-300">

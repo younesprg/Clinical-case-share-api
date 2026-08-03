@@ -27,7 +27,7 @@ export default function SidePanel() {
     ];
 
     return (
-        <aside className="hidden lg:flex fixed left-0 top-[4rem] bottom-0 w-64 bg-white/40 backdrop-blur-xl border-r border-slate-200/50 flex-col z-40">
+        <aside className="hidden lg:flex fixed left-0 top-[3.5rem] h-[calc(100vh-3.5rem)] w-64 bg-white/40 backdrop-blur-xl border-r border-slate-200/50 flex-col z-40">
             {/* Profile Section */}
             <div className="flex flex-col items-center text-center px-5 pt-6 pb-4 border-b border-slate-100">
                 <img

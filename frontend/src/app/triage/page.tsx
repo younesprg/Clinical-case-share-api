@@ -342,7 +342,7 @@ export default function TriagePage() {
                 <SidePanel />
 
                 {/* Main Content Area (Offset by sidebar width on large screens) */}
-                <div className="flex-1 flex flex-col lg:pl-64 relative z-10 h-[calc(100vh-4rem)]">
+                <div className="flex-1 flex flex-col lg:pl-64 relative z-10 h-screen pt-14">
                     <div className="flex-1 flex flex-col w-full h-full relative">
 
                         {/* Scrollable Content Area */}

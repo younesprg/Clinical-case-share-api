@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
-import { Mail, Lock, Activity, ShieldCheck, User } from 'lucide-react';
+import { Mail, Lock, Activity, ShieldCheck, User, HeartPulse, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -43,129 +43,147 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex text-slate-900 bg-slate-50 font-sans">
-            {/* Left Graphic Side */}
-            <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative overflow-hidden bg-slate-900 bg-[url('/Clinical-decision-support.webp')] bg-cover bg-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/70 via-blue-900/60 to-slate-900/80 z-0"></div>
-                <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-                <div className="absolute top-48 -right-24 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="min-h-screen flex text-slate-900 font-sans relative overflow-hidden bg-slate-900 bg-[url('/Clinical-decision-support.webp')] bg-cover bg-center">
+            {/* Global Overlay for entire image */}
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/70 to-blue-900/80 z-0"></div>
+            
+            {/* Subtle animated blobs */}
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDuration: "8s" }}></div>
+            <div className="absolute top-48 -right-24 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDuration: "12s" }}></div>
 
-                <div className="z-10 flex items-center mb-8">
-                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
-                        <Activity className="text-white" size={24} />
+            {/* Left Graphic Side */}
+            <div className="hidden lg:flex lg:w-1/2 p-12 flex-col justify-between relative z-10">
+                <div className="flex items-center mb-8">
+                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-blue-500/30">
+                        <HeartPulse className="text-white" size={24} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-white">MediCore<span className="text-blue-400">AI</span></h1>
-                        <p className="text-sm font-medium text-slate-400">Clinical Case Exchange Platform</p>
+                        <h1 className="text-2xl font-bold tracking-tight text-white">Med<span className="text-blue-400">+</span></h1>
+                        <p className="text-sm font-medium text-slate-400">Tıbbi Sosyal Medya & Vaka Paylaşımı</p>
                     </div>
                 </div>
 
-                <div className="z-10 max-w-lg mb-12">
-                    <h2 className="text-4xl font-bold text-white leading-tight mb-6">
-                        Yapay Zeka Destekli <br />İkinci Görüş.
+                <div className="max-w-lg mb-12">
+                    <h2 className="text-4xl font-extrabold text-white leading-tight mb-6 tracking-tight">
+                        Klinik Deneyimleri Birleştiren<br />
+                        <span className="text-blue-400">Sosyal Ağ.</span>
                     </h2>
-                    <p className="text-lg text-slate-300 mb-8 border-l-2 border-blue-500 pl-4 py-1">
-                        Sisteme giriş yaparak anonim vaka paylaşım ağına dahil olun, anında yapay zeka destekli tıbbi analizler alın.
+                    <p className="text-lg text-slate-300 mb-8 border-l-2 border-blue-500 pl-4 py-1 leading-relaxed">
+                        Med+ ağına katılarak zorlu klinik vakaları inceleyin, anonim olarak kendi vakalarınızı paylaşın ve dünyanın dört bir yanındaki uzmanlarla anında fikir alışverişinde bulunun.
                     </p>
-                    <div className="flex gap-4">
-                        <div className="flex items-center text-sm font-medium text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                            <ShieldCheck size={18} className="text-emerald-400 mr-2" /> 256-bit Şifreleme
+                    <div className="flex flex-wrap gap-3">
+                        <div className="flex items-center text-sm font-medium text-slate-300 bg-white/5 px-4 py-2.5 rounded-xl border border-white/10 backdrop-blur-md">
+                            <Activity size={18} className="text-blue-400 mr-2" /> Vaka Odaklı Klinik Akış
                         </div>
-                        <div className="flex items-center text-sm font-medium text-slate-300 bg-white/5 px-4 py-2 rounded-lg border border-white/10">
-                            <Activity size={18} className="text-blue-400 mr-2" /> Gemini 3.1 Flash LLM
+                        <div className="flex items-center text-sm font-medium text-slate-300 bg-white/5 px-4 py-2.5 rounded-xl border border-white/10 backdrop-blur-md">
+                            <BookOpen size={18} className="text-purple-400 mr-2" /> Kapsamlı Klinik Literatür
                         </div>
                     </div>
                 </div>
-                <div className="z-10 text-slate-500 text-sm">
-                    © 2026 MediCore AI Systems. Tüm hakları saklıdır.
+                <div className="text-slate-500 text-sm font-medium">
+                    © 2026 Med+ Systems. Tüm hakları saklıdır.
                 </div>
             </div>
 
-            {/* Right Form Side */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
-                <div className="w-full max-w-md">
+            {/* Right Form Side (Full height frosted glass panel) */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative z-10 bg-slate-900/10 backdrop-blur-xl border-l border-white/10">
+                <div className="w-full max-w-lg relative z-10">
                     <div className="text-center mb-10">
                         <div className="lg:hidden flex items-center justify-center mb-8">
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-3">
-                                <Activity className="text-white" size={20} />
+                            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-lg shadow-blue-500/30">
+                                <HeartPulse className="text-white" size={24} strokeWidth={2.5} />
                             </div>
-                            <h1 className="text-xl font-bold tracking-tight text-slate-900">MediCore<span className="text-blue-600">AI</span></h1>
+                            <h1 className="text-3xl font-bold tracking-tight text-white">Med<span className="text-blue-400">+</span></h1>
                         </div>
 
-                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Tekrar Hoş Geldiniz</h2>
-                        <p className="text-slate-500 mt-2">Hesabınıza giriş yaparak vakalarınızı yönetin.</p>
+                        <h2 className="text-3xl font-bold text-white tracking-tight">Tekrar Hoş Geldiniz</h2>
+                        <p className="text-slate-300 mt-2 font-medium">Hesabınıza giriş yaparak meslektaşlarınızla bağlantıda kalın.</p>
                     </div>
 
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-100 font-medium text-sm flex items-start">
-                            <AlertCircle size={18} className="mr-2 flex-shrink-0 mt-0.5" />
-                            {error}
+                        <div className="bg-red-500/10 text-red-400 p-4 rounded-xl mb-6 border border-red-500/20 font-medium text-sm flex items-start backdrop-blur-sm">
+                            <ShieldCheck className="shrink-0 mr-2" size={18} />
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Email Adresi</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Mail size={18} className="text-slate-400" />
+                    <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-10">
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Email Adresi</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <Mail size={18} />
+                                    </div>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl text-sm bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder-slate-500"
+                                        placeholder="dr.isim@hastane.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        disabled={isSubmitting}
+                                    />
                                 </div>
-                                <input
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-2xl bg-slate-50/50 shadow-sm text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                                    placeholder="doktor@hastane.com"
-                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Şifre</label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <Lock size={18} />
+                                    </div>
+                                    <input
+                                        type="password"
+                                        required
+                                        className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl text-sm bg-white/5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder-slate-500"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700">Şifre</label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Lock size={18} className="text-slate-400" />
-                                </div>
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-11 pr-4 py-3 border border-slate-200 rounded-2xl bg-slate-50/50 shadow-sm text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-slate-900"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center justify-between mt-6 mb-8">
                             <div className="flex items-center">
-                                <input id="remember-me" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600">
+                                <input
+                                    id="remember-me"
+                                    name="remember-me"
+                                    type="checkbox"
+                                    className="h-4 w-4 text-blue-500 focus:ring-blue-500 border-white/20 bg-white/5 rounded cursor-pointer"
+                                />
+                                <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-300 cursor-pointer select-none font-medium">
                                     Beni hatırla
                                 </label>
                             </div>
-                            <div className="text-sm text-blue-600 font-medium hover:text-blue-500 cursor-pointer transition-colors">
-                                Şifremi unuttum?
+                            <div className="text-sm">
+                                <a href="#" className="font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                                    Şifremi unuttum?
+                                </a>
                             </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-2xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-75 disabled:cursor-not-allowed mt-4"
+                            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
                         >
-                            {isSubmitting ? <Activity className="animate-spin mr-2" size={18} /> : null}
-                            {isSubmitting ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+                            {isSubmitting ? (
+                                <Activity className="animate-spin" size={18} />
+                            ) : (
+                                'Giriş Yap'
+                            )}
                         </button>
+                        
+                        <div className="mt-8 text-center text-sm font-medium text-slate-400">
+                            Henüz hesabınız yok mu?{' '}
+                            <Link href="/register" className="font-bold text-blue-400 hover:text-blue-300 transition-colors">
+                                Hemen Kayıt Olun
+                            </Link>
+                        </div>
                     </form>
-
-                    <div className="mt-8 text-center text-sm font-medium text-slate-600">
-                        Henüz hesabınız yok mu?{' '}
-                        <Link href="/register" className="text-blue-600 hover:text-blue-500 transition-colors">
-                            Hemen Kayıt Olun
-                        </Link>
-                    </div>
                 </div>
             </div>
         </div>
