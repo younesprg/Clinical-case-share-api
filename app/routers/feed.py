@@ -17,6 +17,8 @@ import app.models as models
 import app.schemas as schemas
 import app.auth as auth
 from app.db import get_db
+from app.services import token_service
+from app.services.token_service import VALIDATION_THRESHOLD, RARE_CASE_THRESHOLD, COMMENT_AGREE_THRESHOLD
 
 
 router = APIRouter(
@@ -488,3 +490,205 @@ def get_agreements(
         models.PostAgreement.post_id == post_id
     ).all()
 
+
+# ══════════════════════════════════════════════════════════════
+# DESCI: VALIDATE (DOĞRULA) ENDPOINT
+# ══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/posts/{post_id}/validate",
+    status_code=status.HTTP_200_OK,
+    summary="Vakayı Doğrula (DeSci)",
+)
+def validate_post(
+    post_id: int,
+    is_rare: bool = False,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """
+    Bir doktor başka bir doktorun vakasını 'Doğrula' ile onaylar.
+    - is_rare=True ise aynı zamanda 'Nadir Vaka' oyu da verir.
+    - Her 5 Doğrulada vaka sahibine +25 MED + Akademik Puan verilir.
+    - Vaka 3 Nadir oyu aldığında +50 MED bonus verilir.
+    """
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Paylaşım bulunamadı.")
+
+    if post.author_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Kendi vakasınızı doğrulayamazsınız.")
+
+    # Tekrar doğrulama engelleyelim
+    existing = db.query(models.PostValidation).filter(
+        models.PostValidation.post_id == post_id,
+        models.PostValidation.validator_id == current_user.id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu vakayı zaten doğruladınız.")
+
+    # Doğrulama kaydı oluştur
+    validation = models.PostValidation(
+        post_id=post_id,
+        validator_id=current_user.id,
+        is_rare_vote=is_rare,
+    )
+    db.add(validation)
+
+    # Sayacı güncelle
+    post.validation_count += 1
+    rewards_granted = []
+
+    # Eşik kontrolü: TAM OLARAK 5. Doğrulada (sadece bir kez) token ver
+    if post.validation_count == VALIDATION_THRESHOLD:
+        token_service.on_validation_reached(
+            db=db,
+            author_id=post.author_id,
+            post_id=post.id,
+        )
+        rewards_granted.append("+5 MED (5 uzman doğrulaması ödülü)")
+
+    # Nadir Vaka oyu
+    if is_rare:
+        post.rare_vote_count += 1
+        # Eşik kontrolü: RARE_CASE_THRESHOLD (=3) Nadir oyu = bonus
+        if post.rare_vote_count == RARE_CASE_THRESHOLD:
+            post.is_rare_case = True
+            token_service.on_rare_case_bonus(
+                db=db,
+                author_id=post.author_id,
+                post_id=post.id,
+            )
+            rewards_granted.append("+50 MED (Nadir Vaka bonusu)")
+
+    db.commit()
+
+    return {
+        "message": "Vaka başarıyla doğrulandı.",
+        "validation_count": post.validation_count,
+        "is_rare_case": post.is_rare_case,
+        "rewards_granted": rewards_granted,
+    }
+
+
+@router.delete(
+    "/posts/{post_id}/validate",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Doğrulama Geri Al",
+)
+def remove_validation(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Kullanıcının verdiği Doğrula oyunu geri almasını sağlar (token iade edilmez)."""
+    validation = db.query(models.PostValidation).filter(
+        models.PostValidation.post_id == post_id,
+        models.PostValidation.validator_id == current_user.id,
+    ).first()
+    if not validation:
+        raise HTTPException(status_code=404, detail="Bu vakayı doğrulamamışsınız.")
+
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post:
+        post.validation_count = max(0, post.validation_count - 1)
+        if validation.is_rare_vote:
+            post.rare_vote_count = max(0, post.rare_vote_count - 1)
+
+    db.delete(validation)
+    db.commit()
+
+
+# ══════════════════════════════════════════════════════════════
+# DESCI: YORUM ONAY (KATILIYORUM) ENDPOINT
+# ══════════════════════════════════════════════════════════════
+
+@router.post(
+    "/comments/{comment_id}/agree",
+    status_code=status.HTTP_200_OK,
+    summary="Yorumu Onayla - Katılıyorum (DeSci)",
+)
+def agree_comment(
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """
+    Bir uzman doktor başka bir doktorun yorumunu 'Katılıyorum' ile onaylar.
+    - Sadece doktorlar oy kullanabilir.
+    - Yorum 5 uzman onayna ulaştığında yorum sahibine +10 MED verilir (tek seferlik).
+    """
+    # Sadece doktorlar oy kullanabilir
+    if current_user.role != models.UserRole.DOCTOR:
+        raise HTTPException(
+            status_code=403,
+            detail="Sadece uzman doktorlar yorum onaylayabilir."
+        )
+
+    comment = db.query(models.PostComment).filter(models.PostComment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Yorum bulunamadı.")
+
+    if comment.author_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Kendi yorumunuzu onaylayamazsınız.")
+
+    # Tekrar oylama engelleyelim
+    existing = db.query(models.CommentAgree).filter(
+        models.CommentAgree.comment_id == comment_id,
+        models.CommentAgree.user_id == current_user.id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Bu yorumu zaten onayladınız.")
+
+    # Onay kaydı oluştur
+    agree = models.CommentAgree(
+        comment_id=comment_id,
+        user_id=current_user.id,
+    )
+    db.add(agree)
+    comment.agree_count += 1
+    rewards_granted = []
+
+    # Eşik: TAM OLARAK 5. uzman onayında (sadece bir kez) token ver
+    if comment.agree_count == COMMENT_AGREE_THRESHOLD:
+        post_id = comment.post_id  # İlgili vakayla ilişkilendir
+        token_service.on_comment_approved(
+            db=db,
+            comment_author_id=comment.author_id,
+            post_id=post_id,
+        )
+        rewards_granted.append("+10 MED (5 uzman yorum onayı ödülü)")
+
+    db.commit()
+
+    return {
+        "message": "Yorum başarıyla onayandı.",
+        "agree_count": comment.agree_count,
+        "rewards_granted": rewards_granted,
+    }
+
+
+@router.delete(
+    "/comments/{comment_id}/agree",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Yorum Onayını Geri Al",
+)
+def remove_comment_agree(
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Verilen Katılıyorum onayını geri al (token iade edilmez)."""
+    agree = db.query(models.CommentAgree).filter(
+        models.CommentAgree.comment_id == comment_id,
+        models.CommentAgree.user_id == current_user.id,
+    ).first()
+    if not agree:
+        raise HTTPException(status_code=404, detail="Bu yorumu onaylamamışsınız.")
+
+    comment = db.query(models.PostComment).filter(models.PostComment.id == comment_id).first()
+    if comment:
+        comment.agree_count = max(0, comment.agree_count - 1)
+
+    db.delete(agree)
+    db.commit()

@@ -19,6 +19,8 @@ from datetime import date
 from app.routers import feed as feed_router
 # Triage Bot Router
 from app.routers import triage as triage_router
+# DeSci MedToken Router
+from app.routers import tokens as tokens_router
 
 # ── Uygulama yaşam döngüsü (startup / shutdown) ──────────────────────────────
 @asynccontextmanager
@@ -46,9 +48,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Register routers ──────────────────────────────────────────
+# ── Register routers ─────────────────────────────────────────────
 app.include_router(feed_router.router)
 app.include_router(triage_router.router)
+app.include_router(tokens_router.router)
 
 @app.get("/")
 def root():

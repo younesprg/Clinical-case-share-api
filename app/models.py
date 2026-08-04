@@ -90,6 +90,12 @@ class User(Base):
     post_likes      = relationship("PostLike", back_populates="user", cascade="all, delete-orphan")
     bookmarks       = relationship("PostBookmark", back_populates="user", cascade="all, delete-orphan")
     agreements      = relationship("PostAgreement", back_populates="user", cascade="all, delete-orphan")
+    comment_agrees  = relationship("CommentAgree", back_populates="user", cascade="all, delete-orphan")
+
+    # DeSci / MedToken relationships
+    token_balance       = relationship("TokenBalance", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    token_transactions  = relationship("TokenTransaction", back_populates="user", cascade="all, delete-orphan", foreign_keys="[TokenTransaction.user_id]")
+    validations_given   = relationship("PostValidation", back_populates="validator", cascade="all, delete-orphan", foreign_keys="[PostValidation.validator_id]")
 
     # Triage
     triage_sessions = relationship("TriageSession", back_populates="user", cascade="all, delete-orphan")
@@ -197,6 +203,10 @@ class Post(Base):
     likes_count     = Column(Integer, default=0, nullable=False)
     agree_count     = Column(Integer, default=0, nullable=False)
     disagree_count  = Column(Integer, default=0, nullable=False)
+    # DeSci fields
+    is_rare_case    = Column(Boolean, default=False, nullable=False)  # Nadir Vaka etiketi
+    rare_vote_count = Column(Integer, default=0, nullable=False)      # Kaç uzman nadir dedi
+    validation_count = Column(Integer, default=0, nullable=False)     # Doğrula sayacı
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # ── Relationships ──────────────────────────────────────────
@@ -228,6 +238,7 @@ class PostComment(Base):
     )
 
     content          = Column(Text, nullable=False)
+    agree_count      = Column(Integer, default=0, nullable=False)  # Uzman onay sayacı
     created_at       = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # ── Relationships ──────────────────────────────────────────
@@ -249,6 +260,26 @@ class PostComment(Base):
 
 # Fix PostComment.post relationship — must point to Post, not self
 PostComment.post = relationship("Post", foreign_keys=[PostComment.post_id], back_populates="comments")
+
+
+class CommentAgree(Base):
+    """Bir uzman doktorun bir yoruma verdiği 'Katılıyorum' oyu. Kişi başına bir kez."""
+    __tablename__ = 'comment_agrees'
+    __table_args__ = (
+        UniqueConstraint('comment_id', 'user_id', name='uq_commentagree_comment_user'),
+    )
+
+    id          = Column(Integer, primary_key=True, index=True)
+    comment_id  = Column(Integer, ForeignKey('post_comments.id', ondelete="CASCADE"), nullable=False)
+    user_id     = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    created_at  = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    comment     = relationship("PostComment", foreign_keys=[comment_id], back_populates="agrees")
+    user        = relationship("User", back_populates="comment_agrees")
+
+
+# PostComment agrees reverse
+PostComment.agrees = relationship("CommentAgree", foreign_keys=[CommentAgree.comment_id], cascade="all, delete-orphan")
 
 
 class PostLike(Base):
@@ -330,3 +361,72 @@ class TriageMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     session    = relationship("TriageSession", back_populates="messages")
+
+
+# ══════════════════════════════════════════════════════════════
+# ██████  DeSci / MedToken MODULE  ██████
+# ══════════════════════════════════════════════════════════════
+
+class TokenBalance(Base):
+    """Each user has exactly one token balance record (created on first award)."""
+    __tablename__ = 'token_balances'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    user_id         = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), unique=True, nullable=False)
+    balance         = Column(Integer, default=0, nullable=False)          # Current MED balance
+    academic_score  = Column(Integer, default=0, nullable=False)          # Academic reputation points
+    total_earned    = Column(Integer, default=0, nullable=False)          # All-time earned tokens
+    updated_at      = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    user = relationship("User", back_populates="token_balance")
+
+
+class TokenTransaction(Base):
+    """Immutable log of every token movement (earn or spend)."""
+    __tablename__ = 'token_transactions'
+
+    id              = Column(Integer, primary_key=True, index=True)
+    user_id         = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+
+    # Transaction type — what triggered this?
+    tx_type         = Column(String, nullable=False)
+    # Values:
+    #   'post_published'        → +10 MED  (vaka paylaşıldı)
+    #   'validation_milestone'  → +25 MED  (5. Doğrula onayı alındı)
+    #   'rare_case_bonus'       → +50 MED  (Nadir Vaka etiketlendi)
+    #   'thank_you_sent'        → -5 MED   (Hekime Teşekkür gönderildi)
+    #   'thank_you_received'    → +5 MED   (Teşekkür alındı)
+    #   'admin_award'           → manuel ödül
+
+    amount          = Column(Integer, nullable=False)                      # Can be negative (spend)
+    description     = Column(String, nullable=True)                        # Human-readable reason
+    related_post_id = Column(Integer, ForeignKey('posts.id', ondelete="SET NULL"), nullable=True)
+    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    # Blockchain fields (filled in Day 4 when web3.py integration added)
+    onchain_tx_hash = Column(String, nullable=True)   # Testnet transaction hash
+    wallet_address  = Column(String, nullable=True)   # Recipient wallet
+
+    user            = relationship("User", back_populates="token_transactions", foreign_keys=[user_id])
+    related_post    = relationship("Post", foreign_keys=[related_post_id])
+
+
+class PostValidation(Base):
+    """A doctor 'Doğrula' (Validate) action on a post. One per doctor per post."""
+    __tablename__ = 'post_validations'
+    __table_args__ = (
+        UniqueConstraint('post_id', 'validator_id', name='uq_validation_post_user'),
+    )
+
+    id              = Column(Integer, primary_key=True, index=True)
+    post_id         = Column(Integer, ForeignKey('posts.id', ondelete="CASCADE"), nullable=False)
+    validator_id    = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    is_rare_vote    = Column(Boolean, default=False, nullable=False)   # True → "Nadir Vaka" olarak işaretledi
+    created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    post            = relationship("Post", foreign_keys=[post_id])
+    validator       = relationship("User", back_populates="validations_given", foreign_keys=[validator_id])
+
+
+# ── Post.validations reverse relationship ──────────────────────
+Post.validations = relationship("PostValidation", foreign_keys=[PostValidation.post_id], cascade="all, delete-orphan")
