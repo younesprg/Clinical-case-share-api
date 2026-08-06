@@ -23,7 +23,7 @@ if not SECRET_KEY:
 
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 gün (geliştirme için)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 

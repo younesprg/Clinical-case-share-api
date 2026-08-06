@@ -1,25 +1,47 @@
-
-fix_db.py 
-fix_postgres.py 
-full_reset_db.py 
-migrate_db.py 
-seed_users.py
-
+# ── Environment & Secrets ───────────────────────────────────────
 .env
 .env.*
+!.env.example
 
+# ── Python & Virtual Environments ──────────────────────────────
 venv/
 env/
 .venv/
-
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
 
+# ── Alembic Migrations (Do NOT ignore versions, only temp logs)
+alembic/*.log
+
+# ── Temporary DB & Maintenance Scripts ──────────────────────────
+fix_db.py
+fix_postgres.py
+full_reset_db.py
+migrate_db.py
+seed_users.py
+
+# ── Frontend & Node (Root & Subdir) ────────────────────────────
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+build/
+.dist/
+
+# ── Logs & Debug ───────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDEs & OS Files ─────────────────────────────────────────────
 .vscode/
 .idea/
-
-*.log
-*.db
-
-.dist/
-build/
+.DS_Store
+Thumbs.db

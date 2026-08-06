@@ -68,7 +68,7 @@ export default function RegisterPage() {
         <div className="min-h-screen flex text-slate-900 font-sans relative overflow-hidden bg-slate-900 bg-[url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center">
             {/* Global Overlay for entire image */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/70 to-blue-900/80 z-0"></div>
-            
+
             {/* Subtle animated blobs */}
             <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDuration: "8s" }}></div>
             <div className="absolute top-48 -right-24 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDuration: "12s" }}></div>
