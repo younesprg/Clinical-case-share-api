@@ -16,3 +16,5 @@ httpx
 alembic
 # Redis async client
 redis[asyncio]
+# Blockchain (Polygon Amoy Testnet)
+web3

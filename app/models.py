@@ -74,6 +74,10 @@ class User(Base):
     is_verified     = Column(Boolean, default=False, nullable=False)
     """Blue-tick verification for confirmed medical professionals."""
 
+    # ── Blockchain / Wallet ────────────────────────────────────
+    wallet_address  = Column(String, nullable=True)
+    """MetaMask / Polygon cüzdan adresi (0x...). Opsiyonel — demo ve on-chain transfer için."""
+
     # ── Relationships ──────────────────────────────────────────
     authored_cases  = relationship(
         "CasePost", foreign_keys="[CasePost.author_id]",
@@ -403,7 +407,9 @@ class TokenTransaction(Base):
     related_post_id = Column(Integer, ForeignKey('posts.id', ondelete="SET NULL"), nullable=True)
     created_at      = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    # Blockchain fields (filled in Day 4 when web3.py integration added)
+    # Blockchain fields (Gün 4 — web3.py entegrasyonu)
+    status          = Column(String, default='PENDING', nullable=False)
+    # Değerler: 'PENDING' | 'SUCCESS' | 'FAILED' | 'SKIPPED' (cüzdan yoksa)
     onchain_tx_hash = Column(String, nullable=True)   # Testnet transaction hash
     wallet_address  = Column(String, nullable=True)   # Recipient wallet
 

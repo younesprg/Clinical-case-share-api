@@ -28,9 +28,9 @@ REWARDS = {
 }
 
 # Eşik değerleri — kaç onayda ödül verilsin
-VALIDATION_THRESHOLD = 5    # Vaka için: 5 uzman Doğrula → +5 MED (sadece bir kez)
-COMMENT_AGREE_THRESHOLD = 5  # Yorum için: 5 uzman Katılıyorum → +10 MED (sadece bir kez)
-RARE_CASE_THRESHOLD = 3     # 3 uzman "Nadir Vaka" derse → +50 MED bonus
+VALIDATION_THRESHOLD = 1    # DEMO İÇİN 1'e İNDİRİLDİ (Normalde 5)
+COMMENT_AGREE_THRESHOLD = 1  # DEMO İÇİN 1'e İNDİRİLDİ (Normalde 5)
+RARE_CASE_THRESHOLD = 1     # DEMO İÇİN 1'e İNDİRİLDİ (Normalde 3)
 
 # Akademik itibar puanı
 ACADEMIC_SCORE_VALIDATION = 15   # 5 Doğrulaya ulaşan vaka sahibine
@@ -57,12 +57,14 @@ def award_tokens(
     related_post_id: int | None = None,
     onchain_tx_hash: str | None = None,
     wallet_address: str | None = None,
+    status: str = "PENDING",
 ) -> TokenTransaction:
     """
     Merkezi token ödül fonksiyonu.
     - TokenBalance günceller
-    - TokenTransaction kaydı oluşturur
+    - TokenTransaction kaydı oluşturur (status=PENDING)
     - Commit YAPMAZ — çağıran commit eder
+    - Döndürdüğü `tx` nesnesinin `id`'si, blockchain background task için kullanılır
     """
     balance = _get_or_create_balance(db, user_id)
 
@@ -82,6 +84,7 @@ def award_tokens(
         related_post_id=related_post_id,
         onchain_tx_hash=onchain_tx_hash,
         wallet_address=wallet_address,
+        status=status,
     )
     db.add(tx)
     return tx

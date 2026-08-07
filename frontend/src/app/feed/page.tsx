@@ -637,10 +637,20 @@ function PostCard({ post }: { post: UnifiedPost }) {
             const rewards: string[] = res.data.rewards_granted || [];
             if (rewards.length > 0) {
                 rewards.forEach((r) => {
-                    const match = r.match(/\+(\d+)/);
-                    const amount = match ? parseInt(match[1]) : 5;
-                    showTokenToast(amount, r);
+                    // Ödülü işlemi yapan değil, vakanın yazarı (karşı taraf) alır.
+                    showSuccess(
+                        '🏆 Yazar Ödül Kazandı!',
+                        `Bu onayınız sayesinde vaka sahibi ${r}`
+                    );
                 });
+                
+                if (res.data.blockchain === "queued") {
+                    showSuccess(
+                        "🔗 Blokzincire Yazılıyor...",
+                        "İşleminiz Polygon Amoy ağına iletildi. Birkaç saniye içinde onaylanacak."
+                    );
+                }
+
                 emitTokenUpdate();
             } else {
                 showSuccess(

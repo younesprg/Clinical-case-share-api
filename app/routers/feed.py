@@ -8,7 +8,7 @@ Covered features:
   - Comments: Create top-level comment or threaded reply
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
@@ -18,6 +18,7 @@ import app.schemas as schemas
 import app.auth as auth
 from app.db import get_db
 from app.services import token_service
+from app.services import blockchain_service
 from app.services.token_service import VALIDATION_THRESHOLD, RARE_CASE_THRESHOLD, COMMENT_AGREE_THRESHOLD
 
 
@@ -498,10 +499,11 @@ def get_agreements(
 @router.post(
     "/posts/{post_id}/validate",
     status_code=status.HTTP_200_OK,
-    summary="Vakayı Doğrula (DeSci)",
+    summary="Vakaı Doğrula (DeSci)",
 )
 def validate_post(
     post_id: int,
+    background_tasks: BackgroundTasks,
     is_rare: bool = False,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),
@@ -509,15 +511,16 @@ def validate_post(
     """
     Bir doktor başka bir doktorun vakasını 'Doğrula' ile onaylar.
     - is_rare=True ise aynı zamanda 'Nadir Vaka' oyu da verir.
-    - Her 5 Doğrulada vaka sahibine +25 MED + Akademik Puan verilir.
+    - Her 5 Doğrulada vaka sahibine +5 MED + Akademik Puan verilir.
     - Vaka 3 Nadir oyu aldığında +50 MED bonus verilir.
+    - Blockchain transferi arka planda (BackgroundTasks) gerçekleşir.
     """
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Paylaşım bulunamadı.")
 
     if post.author_id == current_user.id:
-        raise HTTPException(status_code=400, detail="Kendi vakasınızı doğrulayamazsınız.")
+        raise HTTPException(status_code=400, detail="Kendi vakasınızı doğrulayıamazsınız.")
 
     # Tekrar doğrulama engelleyelim
     existing = db.query(models.PostValidation).filter(
@@ -525,7 +528,7 @@ def validate_post(
         models.PostValidation.validator_id == current_user.id,
     ).first()
     if existing:
-        raise HTTPException(status_code=409, detail="Bu vakayı zaten doğruladınız.")
+        raise HTTPException(status_code=409, detail="Bu vakası zaten doğruladınız.")
 
     # Doğrulama kaydı oluştur
     validation = models.PostValidation(
@@ -535,18 +538,34 @@ def validate_post(
     )
     db.add(validation)
 
-    # Sayacı güncelle
+    # Sayıcıyı güncelle
     post.validation_count += 1
     rewards_granted = []
 
+    # Vaka sahibinin cüzdan adresi
+    author = db.query(models.User).filter(models.User.id == post.author_id).first()
+    author_wallet = getattr(author, "wallet_address", None)
+
     # Eşik kontrolü: TAM OLARAK 5. Doğrulada (sadece bir kez) token ver
     if post.validation_count == VALIDATION_THRESHOLD:
-        token_service.on_validation_reached(
+        tx = token_service.on_validation_reached(
             db=db,
             author_id=post.author_id,
             post_id=post.id,
         )
+        db.flush()  # tx.id'yi öğrenmek için
         rewards_granted.append("+5 MED (5 uzman doğrulaması ödülü)")
+
+        # ⛓️ Blockchain arka plan görevi
+        if author_wallet:
+            background_tasks.add_task(
+                blockchain_service.send_reward_onchain,
+                db=db,
+                tx_id=tx.id,
+                wallet_address=author_wallet,
+                amount_med=token_service.REWARDS["validation_first_five"],
+                reason="validation_milestone",
+            )
 
     # Nadir Vaka oyu
     if is_rare:
@@ -554,12 +573,24 @@ def validate_post(
         # Eşik kontrolü: RARE_CASE_THRESHOLD (=3) Nadir oyu = bonus
         if post.rare_vote_count == RARE_CASE_THRESHOLD:
             post.is_rare_case = True
-            token_service.on_rare_case_bonus(
+            rare_tx = token_service.on_rare_case_bonus(
                 db=db,
                 author_id=post.author_id,
                 post_id=post.id,
             )
+            db.flush()
             rewards_granted.append("+50 MED (Nadir Vaka bonusu)")
+
+            # ⛓️ Blockchain arka plan görevi
+            if author_wallet:
+                background_tasks.add_task(
+                    blockchain_service.send_reward_onchain,
+                    db=db,
+                    tx_id=rare_tx.id,
+                    wallet_address=author_wallet,
+                    amount_med=token_service.REWARDS["rare_case_bonus"],
+                    reason="rare_case_bonus",
+                )
 
     db.commit()
 
@@ -568,6 +599,7 @@ def validate_post(
         "validation_count": post.validation_count,
         "is_rare_case": post.is_rare_case,
         "rewards_granted": rewards_granted,
+        "blockchain": "queued" if author_wallet else "skipped_no_wallet",
     }
 
 
